@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>언더커버 미쓰홍: 리듬 잠입</title>
+    <style>
+        body { background: #f5f5dc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        #game-container { position: relative; width: 600px; height: 800px; background: #eee; border: 5px solid #333; display: flex; }
+        #game-canvas { width: 66.6%; height: 100%; background: #fff; border-right: 2px solid #333; }
+        #ui-side { width: 33.3%; height: 100%; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background: #dcdcae; }
+        .info { font-weight: bold; margin-bottom: 10px; }
+        .btn { padding: 10px; background: #333; color: white; border: none; cursor: pointer; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="game-canvas" width="400" height="800"></canvas>
+
+    <div id="ui-side">
+        <div class="info">REMAINING: <span id="life">3</span></div>
+        <div class="info">CASH: <span id="score">0</span></div>
+        <div class="info">MODE: <span id="modeText">RECORDING</span></div>
+        <p style="font-size: 12px;">(1, 2, 3키를 눌러 노트를 찍으세요)</p>
+        <button class="btn" onclick="exportNotes()">노트 데이터 추출</button>
+        <button class="btn" style="margin-top:5px;" onclick="startGame()">음악 시작</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const audio = new Audio('dance_tonight.mp3'); // 같은 폴더에 파일을 두세요.
+    
+    let notes = []; // 기록된 노트 저장용
+    let isRecording = true;
+
+    // 1. 키보드 입력 시 시간 기록 (에디터 기능)
+    window.addEventListener('keydown', (e) => {
+        if (isRecording && !audio.paused) {
+            const time = Math.floor(audio.currentTime * 1000); // 밀리초 단위
+            let lane = 0;
+            if (e.key === '1') lane = 1;
+            if (e.key === '2') lane = 2;
+            if (e.key === '3') lane = 3;
+
+            if (lane > 0) {
+                notes.push({ time: time, lane: lane, type: 'REAL' });
+                console.log(`Note recorded: ${time}ms at Lane ${lane}`);
+            }
+        }
+    });
+
+    // 2. 노트 데이터 내보내기 (이걸 복사해서 1번 방식 데이터로 사용)
+    function exportNotes() {
+        console.log(JSON.stringify(notes));
+        alert("콘솔 창(F12)을 확인하여 JSON 데이터를 복사하세요!");
+    }
+
+    function startGame() {
+        audio.play();
+        update();
+    }
+
+    // 3. 루프 애니메이션
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const currentTime = audio.currentTime * 1000;
+
+        // 판정선 그리기
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(0, 700, 400, 2);
+
+        // 노트 그리기 (위에서 아래로 내려오는 로직)
+        notes.forEach(note => {
+            const dropSpeed = 0.5; // 속도 조절
+            const y = 700 - (note.time - currentTime) * dropSpeed;
+            
+            if (y > 0 && y < 800) {
+                ctx.fillStyle = note.type === 'REAL' ? 'gold' : 'red';
+                ctx.fillRect((note.lane - 1) * 133 + 40, y, 50, 20);
+            }
+        });
+
+        requestAnimationFrame(update);
+    }
+</script>
+</body>
+</html>
