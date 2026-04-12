@@ -1,121 +1,112 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>언더커버 미쓰홍: 비자금 디펜스 (최종 통합)</title>
-    <style>
-        :root { --bg: #f5f5dc; --panel: #dcdcae; --accent: #333; --green: #006400; --red: #d32f2f; }
-        body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; }
-        #game-container { position: relative; width: 850px; height: 950px; background: #222; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.4); border: 8px solid var(--accent); border-radius: 12px; }
-        #game-canvas { width: 62.5%; height: 100%; background: #1a1a1a; border-right: 4px solid var(--accent); image-rendering: pixelated; /* 도트 최적화 */ }
-        #ui-side { width: 37.5%; height: 100%; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; background: var(--panel); }
-        
-        .mode-indicator { font-size: 24px; font-weight: 900; text-align: center; padding: 12px; margin-bottom: 25px; border: 2px solid var(--accent); border-radius: 5px; text-transform: uppercase; }
-        .MODE-EDIT { background: #ffeb3b; color: #000; }
-        .MODE-PLAY { background: #4caf50; color: #fff; }
+    <meta charset="UTF-8">
+    <title>언더커버 미쓰홍: 비자금 디펜스 (최종 통합본)</title>
+    <style>
+        :root { --bg: #f5f5dc; --panel: #dcdcae; --accent: #333; --green: #2e7d32; --red: #d32f2f; }
+        body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        
+        #game-container { position: relative; width: 900px; height: 950px; background: #222; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.4); border: 8px solid var(--accent); border-radius: 12px; }
+        #game-canvas { width: 65%; height: 100%; background: #1a1a1a; border-right: 4px solid var(--accent); image-rendering: pixelated; }
+        
+        #ui-side { width: 35%; height: 100%; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; background: var(--panel); overflow-y: auto; }
+        
+        .mode-indicator { font-size: 24px; font-weight: 900; text-align: center; padding: 12px; margin-bottom: 20px; border: 4px solid var(--accent); border-radius: 5px; }
+        .MODE-EDIT { background: #ffeb3b; color: #000; }
+        .MODE-PLAY { background: var(--green); color: #fff; }
 
-        .stat-box { background: rgba(255,255,255,0.7); padding: 15px; border-radius: 8px; margin-bottom: 18px; font-family: monospace; border: 1px solid rgba(0,0,0,0.1); }
-        .btn { padding: 16px; background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 12px; font-weight: bold; transition: 0.2s; border-radius: 5px; font-size: 14px; }
-        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
-        .btn-toggle { background: #5c5c5c; margin-bottom: 30px; }
-        
-        #judge-display { font-size: 42px; font-weight: 900; text-align: center; height: 60px; margin-top: 25px; color: var(--red); text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-    </style>
+        .stat-box { background: rgba(255,255,255,0.8); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-family: monospace; border: 2px solid var(--accent); }
+        .btn { padding: 12px; background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 8px; font-weight: bold; border-radius: 4px; transition: 0.2s; }
+        .btn:hover { background: #555; }
+        
+        textarea { width: 100%; height: 100px; margin-top: 10px; font-size: 10px; background: #eee; border: 1px solid #999; border-radius: 4px; resize: none; }
+        
+        #judge-display { font-size: 48px; font-weight: 900; text-align: center; height: 60px; margin-top: 20px; text-shadow: 2px 2px 0px #000; }
+        .instruction { font-size: 12px; color: #444; margin-top: auto; line-height: 1.4; padding: 10px; background: rgba(255,255,255,0.3); border-radius: 4px; }
+    </style>
 </head>
 <body>
 
 <div id="game-container">
-    <canvas id="game-canvas" width="550" height="950"></canvas>
-    
-    <div id="ui-side">
-        <div id="modeTag" class="mode-indicator MODE-EDIT">EDITOR</div>
-        
-        <button class="btn btn-toggle" onclick="toggleMode()">모드 전환 (Tab)</button>
+    <canvas id="game-canvas" width="585" height="950"></canvas>
+    
+    <div id="ui-side">
+        <div id="modeTag" class="mode-indicator MODE-EDIT">EDITOR MODE</div>
+        
+        <button class="btn" style="background: #5c5c5c;" onclick="toggleMode()">모드 전환 (Tab)</button>
+        
+        <div class="stat-box">
+            TIME: <span id="timeDisplay">0.00</span>s<br>
+            NOTES: <span id="noteCount">0</span>
+        </div>
 
-        <div class="stat-box">
-            TIME: <span id="timeDisplay">0.00</span>s<br>
-            NOTES: <span id="noteCount">0</span>
-        </div>
+        <div id="playStats" style="display:none;">
+            <div class="stat-box" style="color: var(--green); font-size: 1.2em;">CASH: ₩<span id="score">0</span></div>
+            <div class="stat-box" style="color: var(--red);">SUSPICION: <span id="life">0</span>%</div>
+            <div id="judge-display"></div>
+        </div>
 
-        <div id="playStats" style="display:none;">
-            <div class="stat-box" style="color: green; font-weight: bold;">CASH: $<span id="score">0</span></div>
-            <div class="stat-box" style="color: red;">SUSPICION: <span id="life">0</span>%</div>
-            <div id="judge-display"></div>
-        </div>
+        <button class="btn" onclick="controlAudio()">음악 재생/정지 (Space)</button>
+        
+        <p style="font-weight: bold; margin-bottom: 0;">장부 데이터 (JSON)</p>
+        <textarea id="dataArea" placeholder="데이터를 여기에 붙여넣고 '데이터 적용'을 누르세요."></textarea>
+        <button class="btn" onclick="importData()">데이터 적용 (Import)</button>
+        <button class="btn" onclick="exportData()">데이터 복사 (Export)</button>
+        <button class="btn" style="background:var(--red);" onclick="clearNotes()">전체 초기화</button>
 
-        <button class="btn" onclick="controlAudio()">재생 / 일시정지 (Space)</button>
-        <button class="btn" onclick="exportData()">JSON 데이터 복사</button>
-        <button class="btn" onclick="clearNotes()" style="background:#d32f2f;">노트 초기화</button>
-        
-        <p style="font-size: 11px; margin-top: auto; color: #555; line-height: 1.5; background: rgba(255,255,255,0.3); padding: 10px;">
-            [1, 2, 3, 4, 5] 키: 노트 입력<br>
-            [Tab]: 모드 전환 / [Space]: 재생 및 정지
-        </p>
-    </div>
+        <div class="instruction">
+            [1, 2, 3, 4, 5] : 레인 입력<br>
+            [Shift + 숫자] : FAKE(회장님) 노트 생성<br>
+            [Tab] : 모드 전환 | [Space] : 재생
+        </div>
+    </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
-    const audio = new Audio('dance_tonight.mp3');
-    
-    let currentMode = 'EDIT'; 
-    let notes = []; 
-    let score = 0;
-    let life = 0; 
-    let characterState = 'IDLE'; 
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const audio = new Audio('dance_tonight.mp3'); // 파일명이 정확해야 함
+    
+    let currentMode = 'EDIT'; 
+    let notes = []; 
+    let score = 0;
+    let life = 0; 
+    let characterState = 'IDLE'; 
+    const LANE_COUNT = 5;
+    const LANE_WIDTH = canvas.width / LANE_COUNT;
 
-    const LANE_COUNT = 5;
-    const LANE_WIDTH = 110; 
-
-    // 초기 데이터 (5레인 분산 및 일부 FAKE 변경)
-    const initialRawData = [[{"time":601,"lane":1,"type":"REAL"},{"time":892,"lane":1,"type":"REAL"},{"time":2456,"lane":1,"type":"REAL"},{"time":2775,"lane":1,"type":"REAL"},{"time":3446,"lane":2,"type":"REAL"},{"time":3705,"lane":3,"type":"REAL"},{"time":3892,"lane":1,"type":"REAL"},{"time":4481,"lane":2,"type":"REAL"},{"time":4814,"lane":2,"type":"REAL"},{"time":6508,"lane":3,"type":"REAL"},{"time":6814,"lane":3,"type":"REAL"},{"time":8477,"lane":1,"type":"REAL"},{"time":8855,"lane":1,"type":"REAL"},{"time":9329,"lane":2,"type":"REAL"},{"time":9648,"lane":2,"type":"REAL"},{"time":10502,"lane":3,"type":"REAL"},{"time":10867,"lane":3,"type":"REAL"},{"time":12518,"lane":1,"type":"REAL"},{"time":12930,"lane":2,"type":"REAL"},{"time":14529,"lane":1,"type":"REAL"},{"time":14869,"lane":2,"type":"REAL"},{"time":15291,"lane":1,"type":"REAL"},{"time":15891,"lane":1,"type":"REAL"},{"time":16279,"lane":1,"type":"REAL"},{"time":17559,"lane":1,"type":"REAL"},{"time":17714,"lane":2,"type":"REAL"},{"time":18004,"lane":3,"type":"REAL"},{"time":19586,"lane":1,"type":"REAL"},{"time":19969,"lane":1,"type":"REAL"},{"time":20304,"lane":2,"type":"REAL"},{"time":21594,"lane":3,"type":"REAL"},{"time":21806,"lane":2,"type":"REAL"},{"time":22087,"lane":1,"type":"REAL"},{"time":23886,"lane":1,"type":"REAL"},{"time":24109,"lane":2,"type":"REAL"},{"time":24372,"lane":3,"type":"REAL"},{"time":24559,"lane":2,"type":"REAL"},{"time":24928,"lane":2,"type":"REAL"},{"time":25059,"lane":2,"type":"REAL"},{"time":26193,"lane":3,"type":"REAL"},{"time":26821,"lane":1,"type":"REAL"},{"time":27655,"lane":1,"type":"REAL"},{"time":27830,"lane":2,"type":"REAL"},{"time":28153,"lane":3,"type":"REAL"},{"time":29683,"lane":1,"type":"REAL"},{"time":29907,"lane":2,"type":"REAL"},{"time":30164,"lane":3,"type":"REAL"},{"time":30863,"lane":2,"type":"REAL"},{"time":31678,"lane":1,"type":"REAL"},{"time":31888,"lane":2,"type":"REAL"},{"time":32199,"lane":3,"type":"REAL"},{"time":32669,"lane":2,"type":"REAL"},{"time":33159,"lane":2,"type":"REAL"},{"time":33706,"lane":3,"type":"REAL"},{"time":34200,"lane":3,"type":"REAL"},{"time":34682,"lane":1,"type":"REAL"},{"time":35134,"lane":1,"type":"REAL"},{"time":35639,"lane":2,"type":"REAL"},{"time":36092,"lane":2,"type":"REAL"},{"time":36705,"lane":3,"type":"REAL"},{"time":37202,"lane":3,"type":"REAL"},{"time":37719,"lane":3,"type":"REAL"},{"time":38201,"lane":3,"type":"REAL"},{"time":38648,"lane":1,"type":"REAL"},{"time":39047,"lane":1,"type":"REAL"},{"time":39650,"lane":1,"type":"REAL"},{"time":40164,"lane":1,"type":"REAL"},{"time":40791,"lane":1,"type":"REAL"},{"time":41161,"lane":1,"type":"REAL"},{"time":41662,"lane":2,"type":"REAL"},{"time":42077,"lane":2,"type":"REAL"},{"time":42476,"lane":3,"type":"REAL"},{"time":43513,"lane":1,"type":"REAL"},{"time":43757,"lane":2,"type":"REAL"},{"time":44174,"lane":3,"type":"REAL"},{"time":44514,"lane":1,"type":"REAL"},{"time":44659,"lane":2,"type":"REAL"},{"time":44779,"lane":3,"type":"REAL"},{"time":45533,"lane":1,"type":"REAL"},{"time":45643,"lane":2,"type":"REAL"},{"time":45717,"lane":3,"type":"REAL"},{"time":46725,"lane":1,"type":"REAL"},{"time":46830,"lane":2,"type":"REAL"},{"time":46911,"lane":3,"type":"REAL"},{"time":47685,"lane":1,"type":"REAL"},{"time":47804,"lane":2,"type":"REAL"},{"time":47906,"lane":3,"type":"REAL"},{"time":48751,"lane":1,"type":"REAL"},{"time":51029,"lane":1,"type":"REAL"},{"time":51313,"lane":2,"type":"REAL"},{"time":51589,"lane":3,"type":"REAL"},{"time":51837,"lane":1,"type":"REAL"},{"time":52315,"lane":2,"type":"REAL"},{"time":52640,"lane":3,"type":"REAL"},{"time":52866,"lane":2,"type":"REAL"},{"time":53222,"lane":3,"type":"REAL"},{"time":53789,"lane":1,"type":"REAL"},{"time":54296,"lane":1,"type":"REAL"},{"time":54883,"lane":1,"type":"REAL"},{"time":55183,"lane":1,"type":"REAL"},{"time":55283,"lane":1,"type":"REAL"},{"time":55571,"lane":1,"type":"REAL"},{"time":55825,"lane":1,"type":"REAL"},{"time":56641,"lane":3,"type":"REAL"},{"time":57155,"lane":2,"type":"REAL"},{"time":58867,"lane":1,"type":"REAL"},{"time":59116,"lane":2,"type":"REAL"},{"time":59295,"lane":3,"type":"REAL"},{"time":59663,"lane":2,"type":"REAL"},{"time":59942,"lane":2,"type":"REAL"},{"time":60380,"lane":2,"type":"REAL"},{"time":60587,"lane":2,"type":"REAL"},{"time":61730,"lane":1,"type":"REAL"},{"time":62607,"lane":3,"type":"REAL"},{"time":63636,"lane":2,"type":"REAL"},{"time":64965,"lane":3,"type":"REAL"},{"time":67148,"lane":1,"type":"REAL"},{"time":67438,"lane":2,"type":"REAL"},{"time":67726,"lane":3,"type":"REAL"},{"time":67975,"lane":2,"type":"REAL"},{"time":68470,"lane":3,"type":"REAL"},{"time":68681,"lane":2,"type":"REAL"},{"time":69009,"lane":1,"type":"REAL"},{"time":70992,"lane":1,"type":"REAL"},{"time":71225,"lane":2,"type":"REAL"},{"time":71388,"lane":3,"type":"REAL"},{"time":71740,"lane":2,"type":"REAL"},{"time":72017,"lane":1,"type":"REAL"},{"time":72462,"lane":2,"type":"REAL"},{"time":72978,"lane":3,"type":"REAL"},{"time":73478,"lane":3,"type":"REAL"},{"time":73986,"lane":3,"type":"REAL"},{"time":74387,"lane":3,"type":"REAL"},{"time":74983,"lane":2,"type":"REAL"},{"time":75393,"lane":1,"type":"REAL"},{"time":76540,"lane":3,"type":"REAL"},{"time":76730,"lane":2,"type":"REAL"},{"time":77530,"lane":3,"type":"REAL"},{"time":77795,"lane":2,"type":"REAL"},{"time":78552,"lane":3,"type":"REAL"},{"time":78805,"lane":1,"type":"REAL"},{"time":79310,"lane":1,"type":"REAL"},{"time":79348,"lane":1,"type":"REAL"},{"time":79379,"lane":1,"type":"REAL"},{"time":79412,"lane":1,"type":"REAL"},{"time":79441,"lane":1,"type":"REAL"},{"time":79481,"lane":1,"type":"REAL"},{"time":79512,"lane":1,"type":"REAL"},{"time":79538,"lane":1,"type":"REAL"},{"time":79574,"lane":1,"type":"REAL"},{"time":79601,"lane":1,"type":"REAL"},{"time":79642,"lane":1,"type":"REAL"},{"time":79664,"lane":1,"type":"REAL"},{"time":79703,"lane":1,"type":"REAL"},{"time":79732,"lane":1,"type":"REAL"},{"time":79766,"lane":1,"type":"REAL"},{"time":79794,"lane":1,"type":"REAL"},{"time":79829,"lane":1,"type":"REAL"},{"time":79868,"lane":1,"type":"REAL"},{"time":79900,"lane":1,"type":"REAL"},{"time":79932,"lane":1,"type":"REAL"},{"time":79958,"lane":1,"type":"REAL"},{"time":79999,"lane":1,"type":"REAL"},{"time":80023,"lane":1,"type":"REAL"},{"time":80062,"lane":1,"type":"REAL"},{"time":80092,"lane":1,"type":"REAL"},{"time":80123,"lane":1,"type":"REAL"},{"time":80150,"lane":1,"type":"REAL"},{"time":80185,"lane":1,"type":"REAL"},{"time":80225,"lane":1,"type":"REAL"},{"time":80249,"lane":1,"type":"REAL"},{"time":80286,"lane":1,"type":"REAL"},{"time":80314,"lane":1,"type":"REAL"},{"time":80348,"lane":1,"type":"REAL"},{"time":80377,"lane":1,"type":"REAL"},{"time":80412,"lane":1,"type":"REAL"},{"time":80452,"lane":1,"type":"REAL"},{"time":80484,"lane":1,"type":"REAL"},{"time":80813,"lane":2,"type":"REAL"},{"time":81014,"lane":3,"type":"REAL"},{"time":85136,"lane":1,"type":"REAL"},{"time":85510,"lane":1,"type":"REAL"},{"time":86133,"lane":2,"type":"REAL"},{"time":86627,"lane":2,"type":"REAL"},{"time":87161,"lane":3,"type":"REAL"},{"time":87511,"lane":3,"type":"REAL"},{"time":88117,"lane":1,"type":"REAL"},{"time":88674,"lane":1,"type":"REAL"},{"time":88998,"lane":1,"type":"REAL"},{"time":89449,"lane":2,"type":"REAL"},{"time":90620,"lane":1,"type":"REAL"},{"time":90929,"lane":2,"type":"REAL"},{"time":91032,"lane":3,"type":"REAL"},{"time":92684,"lane":2,"type":"REAL"},{"time":92972,"lane":2,"type":"REAL"},{"time":93142,"lane":2,"type":"REAL"},{"time":93468,"lane":3,"type":"REAL"},{"time":94668,"lane":1,"type":"REAL"},{"time":95012,"lane":2,"type":"REAL"},{"time":95098,"lane":3,"type":"REAL"},{"time":96725,"lane":1,"type":"REAL"},{"time":97054,"lane":2,"type":"REAL"},{"time":97173,"lane":3,"type":"REAL"},{"time":97519,"lane":1,"type":"REAL"},{"time":98396,"lane":2,"type":"REAL"},{"time":98718,"lane":3,"type":"REAL"},{"time":98988,"lane":2,"type":"REAL"},{"time":99134,"lane":1,"type":"REAL"},{"time":100446,"lane":1,"type":"REAL"},{"time":100956,"lane":2,"type":"REAL"},{"time":101192,"lane":2,"type":"REAL"},{"time":101714,"lane":3,"type":"REAL"},{"time":102201,"lane":1,"type":"REAL"},{"time":102728,"lane":2,"type":"REAL"},{"time":103003,"lane":2,"type":"REAL"},{"time":105267,"lane":3,"type":"REAL"},{"time":105697,"lane":3,"type":"REAL"},{"time":106242,"lane":2,"type":"REAL"},{"time":106838,"lane":2,"type":"REAL"},{"time":107326,"lane":1,"type":"REAL"},{"time":107717,"lane":1,"type":"REAL"},{"time":108221,"lane":2,"type":"REAL"},{"time":108712,"lane":2,"type":"REAL"},{"time":109248,"lane":3,"type":"REAL"},{"time":109728,"lane":3,"type":"REAL"},{"time":110283,"lane":3,"type":"REAL"},{"time":110784,"lane":3,"type":"REAL"},{"time":111309,"lane":1,"type":"REAL"},{"time":111650,"lane":1,"type":"REAL"},{"time":112128,"lane":1,"type":"REAL"},{"time":112359,"lane":1,"type":"REAL"},{"time":112786,"lane":2,"type":"REAL"},{"time":113322,"lane":3,"type":"REAL"},{"time":113750,"lane":3,"type":"REAL"},{"time":114361,"lane":2,"type":"REAL"},{"time":114740,"lane":1,"type":"REAL"},{"time":115074,"lane":2,"type":"REAL"},{"time":115382,"lane":3,"type":"REAL"},{"time":115853,"lane":2,"type":"REAL"},{"time":116345,"lane":1,"type":"REAL"},{"time":116762,"lane":1,"type":"REAL"},{"time":117109,"lane":2,"type":"REAL"},{"time":117377,"lane":2,"type":"REAL"},{"time":117874,"lane":2,"type":"REAL"},{"time":117918,"lane":2,"type":"REAL"},{"time":117948,"lane":2,"type":"REAL"},{"time":118347,"lane":3,"type":"REAL"},{"time":118879,"lane":3,"type":"REAL"},{"time":119380,"lane":1,"type":"REAL"},{"time":119723,"lane":1,"type":"REAL"},{"time":120362,"lane":1,"type":"REAL"},{"time":120859,"lane":1,"type":"REAL"},{"time":120895,"lane":1,"type":"REAL"},{"time":120923,"lane":1,"type":"REAL"},{"time":121386,"lane":1,"type":"REAL"},{"time":123590,"lane":1,"type":"REAL"},{"time":123881,"lane":2,"type":"REAL"},{"time":124175,"lane":3,"type":"REAL"},{"time":124428,"lane":1,"type":"REAL"},{"time":124921,"lane":2,"type":"REAL"},{"time":125237,"lane":3,"type":"REAL"},{"time":125491,"lane":2,"type":"REAL"},{"time":125883,"lane":2,"type":"REAL"},{"time":127428,"lane":1,"type":"REAL"},{"time":127706,"lane":2,"type":"REAL"},{"time":127805,"lane":3,"type":"REAL"},{"time":127805,"lane":3,"type":"REAL"},{"time":128196,"lane":1,"type":"REAL"},{"time":128440,"lane":2,"type":"REAL"},{"time":128954,"lane":3,"type":"REAL"},{"time":129218,"lane":2,"type":"REAL"},{"time":131464,"lane":3,"type":"REAL"},{"time":131744,"lane":2,"type":"REAL"},{"time":131901,"lane":1,"type":"REAL"},{"time":132435,"lane":1,"type":"REAL"},{"time":132953,"lane":2,"type":"REAL"},{"time":133266,"lane":3,"type":"REAL"},{"time":133499,"lane":2,"type":"REAL"},{"time":133499,"lane":2,"type":"REAL"},{"time":134232,"lane":1,"type":"REAL"},{"time":135242,"lane":1,"type":"REAL"},{"time":136286,"lane":1,"type":"REAL"},{"time":137385,"lane":1,"type":"REAL"},{"time":137551,"lane":2,"type":"REAL"},{"time":139847,"lane":1,"type":"REAL"},{"time":140013,"lane":2,"type":"REAL"},{"time":140312,"lane":3,"type":"REAL"},{"time":140572,"lane":2,"type":"REAL"},{"time":141042,"lane":1,"type":"REAL"},{"time":141324,"lane":2,"type":"REAL"},{"time":141593,"lane":3,"type":"REAL"},{"time":143614,"lane":1,"type":"REAL"},{"time":143879,"lane":2,"type":"REAL"},{"time":143997,"lane":3,"type":"REAL"},{"time":144364,"lane":2,"type":"REAL"},{"time":144587,"lane":1,"type":"REAL"},{"time":145064,"lane":2,"type":"REAL"},{"time":145364,"lane":3,"type":"REAL"},{"time":145588,"lane":2,"type":"REAL"},{"time":146142,"lane":2,"type":"REAL"},{"time":146622,"lane":2,"type":"REAL"},{"time":147083,"lane":2,"type":"REAL"},{"time":147330,"lane":1,"type":"REAL"},{"time":147801,"lane":2,"type":"REAL"},{"time":148370,"lane":3,"type":"REAL"},{"time":148703,"lane":1,"type":"REAL"},{"time":149138,"lane":2,"type":"REAL"},{"time":149439,"lane":3,"type":"REAL"},{"time":149640,"lane":1,"type":"REAL"},{"time":149882,"lane":2,"type\":"REAL"},{"time":150201,"lane":3,"type":"REAL"},{"time":150398,"lane":2,"type":"REAL"},{"time":151117,"lane":1,"type":"REAL"},{"time":151389,"lane":2,"type":"REAL"},{"time":151687,"lane":3,"type":"REAL"},{"time":152146,"lane":2,"type":"REAL"},{"time":152416,"lane":2,"type":"REAL"},{"time":152689,"lane":2,"type":"REAL"},{"time":153481,"lane":1,"type":"REAL"},{"time":153636,"lane":2,"type":"REAL"},{"time":153996,"lane":3,"type":"REAL"},{"time":154518,"lane":3,"type":"REAL"},{"time":154541,"lane":3,"type":"REAL"},{"time":154576,"lane":3,"type":"REAL"},{"time":154601,"lane":3,"type":"REAL"},{"time":154641,"lane":3,"type":"REAL"},{"time":154665,"lane":3,"type":"REAL"},{"time":154705,"lane":3,"type":"REAL"},{"time":154727,"lane":3,"type":"REAL"},{"time":154766,"lane":3,"type":"REAL"},{"time":154794,"lane":3,"type":"REAL"},{"time":154829,"lane":3,"type":"REAL"},{"time":154869,"lane":3,"type":"REAL"},{"time":154897,"lane":3,"type":"REAL"},{"time":154933,"lane":3,"type":"REAL"},{"time":154958,"lane":3,"type":"REAL"},{"time":155001,"lane":3,"type":"REAL"},{"time":155023,"lane":3,"type":"REAL"},{"time":155066,"lane":3,"type":"REAL"},{"time":155086,"lane":3,"type":"REAL"},{"time":155124,"lane":3,"type":"REAL"},{"time":155151,"lane":3,"type":"REAL"},{"time":155185,"lane":3,"type":"REAL"},{"time":155224,"lane":3,"type":"REAL"},{"time":155257,"lane":3,"type":"REAL"},{"time":155289,"lane":3,"type":"REAL"},{"time":155315,"lane":3,"type":"REAL"},{"time":155350,"lane":3,"type":"REAL"},{"time":155380,"lane":3,"type":"REAL"},{"time":155413,"lane":3,"type":"REAL"},{"time":155441,"lane":3,"type":"REAL"},{"time":155480,"lane":3,"type":"REAL"},{"time":155515,"lane":3,"type":"REAL"},{"time":155542,"lane":3,"type":"REAL"},{"time":155584,"lane":3,"type":"REAL"},{"time":155606,"lane":3,"type":"REAL"},{"time":155649,"lane":3,"type":"REAL"},{"time":155669,"lane":3,"type":"REAL"},{"time":155707,"lane":3,"type":"REAL"},{"time":155735,"lane":3,"type":"REAL"},{"time":155769,"lane":3,"type":"REAL"},{"time":155796,"lane":3,"type":"REAL"},{"time":157750,"lane":1,"type":"REAL"},{"time":158223,"lane":2,"type":"REAL"},{"time":158470,"lane":3,"type":"REAL"},{"time":158724,"lane":2,"type":"REAL"},{"time":159197,"lane":1,"type":"REAL"},{"time":159730,"lane":2,"type":"REAL"},{"time":160082,"lane":2,"type":"REAL"},{"time":160496,"lane":2,"type":"REAL"},{"time":160719,"lane":1,"type":"REAL"},{"time":161210,"lane":2,"type":"REAL"},{"time":161524,"lane":3,"type":"REAL"},{"time":161740,"lane":2,"type":"REAL"},{"time":162131,"lane":1,"type":"REAL"},{"time":162763,"lane":2,"type":"REAL"},{"time":163280,"lane":2,"type":"REAL"},{"time":163567,"lane":2,"type":"REAL"},{"time":163794,"lane":3,"type":"REAL"},{"time":164122,"lane":1,"type":"REAL"},{"time":164527,"lane":2,"type":"REAL"},{"time":164776,"lane":3,"type":"REAL"},{"time":165020,"lane":1,"type":"REAL"},{"time":165275,"lane":2,"type":"REAL"},{"time":165589,"lane":3,"type":"REAL"},{"time":166104,"lane":2,"type":"REAL"},{"time":166326,"lane":2,"type":"REAL"},{"time":166638,"lane":2,"type":"REAL"},{"time":166882,"lane":1,"type":"REAL"},{"time":167282,"lane":2,"type":"REAL"},{"time":167790,"lane":1,"type":"REAL"},{"time":168044,"lane":2,"type":"REAL"},{"time":168321,"lane":3,"type":"REAL"},{"time":168536,"lane":2,"type":"REAL"},{"time":168799,"lane":1,"type":"REAL"},{"time":169047,"lane":2,"type":"REAL"},{"time":169300,"lane":3,"type":"REAL"},{"time":169526,"lane":2,"type":"REAL"},{"time":169800,"lane":1,"type":"REAL"},{"time":169805,"lane":2,"type":"REAL"},{"time":172093,"lane":1,"type":"REAL"},{"time":172347,"lane":2,"type":"REAL"},{"time":172601,"lane":3,"type":"REAL"},{"time":172850,"lane":2,"type":"REAL"},{"time":173338,"lane":1,"type":"REAL"},{"time":173577,"lane":2,"type":"REAL"},{"time":173913,"lane":3,"type":"REAL"},{"time":175886,"lane":1,"type":"REAL"},{"time":176140,"lane":2,"type":"REAL"},{"time":176260,"lane":3,"type":"REAL"},{"time":176609,"lane":1,"type":"REAL"},{"time":176864,"lane":2,"type":"REAL"},{"time":177375,"lane":3,"type":"REAL"},{"time":177641,"lane":2,"type":"REAL"},{"time":177909,"lane":1,"type":"REAL"},{"time":179621,"lane":1,"type":"REAL"},{"time":180086,"lane":2,"type":"REAL"},{"time":181425,"lane":2,"type":"REAL"},{"time":181673,"lane":3,"type":"REAL"},{"time":182389,"lane":1,"type":"REAL"},{"time":182413,"lane":2,"type":"REAL"},{"time":182699,"lane":2,"type":"REAL"},{"time":183388,"lane":1,"type":"REAL"},{"time":183683,"lane":2,"type":"REAL"},{"time":183922,"lane":3,"type":"REAL"},{"time":184180,"lane":2,"type":"REAL"},{"time":184436,"lane":1,"type":"REAL"},{"time":184667,"lane":2,"type":"REAL"},{"time":184968,"lane":3,"type":"REAL"},{"time":185243,"lane":2,"type":"REAL"},{"time":185447,"lane":1,"type":"REAL"},{"time":185740,"lane":2,"type":"REAL"},{"time":185962,"lane":2,"type":"REAL"},{"time":186456,"lane":2,"type":"REAL"},{"time":186952,"lane":2,"type":"REAL"},{"time":187465,"lane":2,"type":"REAL"},{"time":187930,"lane":1,"type":"REAL"},{"time":188234,"lane":1,"type":"REAL"},{"time":188479,"lane":2,"type":"REAL"},{"time":188740,"lane":2,"type":"REAL"},{"time":189067,"lane":3,"type":"REAL"},{"time":189477,"lane":1,"type":"REAL"},{"time":189720,"lane":2,"type":"REAL"},{"time":190015,"lane":3,"type":"REAL"},{"time":190490,"lane":2,"type":"REAL"},{"time":191028,"lane":3,"type":"REAL"},{"time":191531,"lane":2,"type":"REAL"},{"time":192013,"lane":1,"type":"REAL"},{"time":192260,"lane":2,"type":"REAL"},{"time":192369,"lane":3,"type":"REAL"},{"time":192748,"lane":1,"type":"REAL"},{"time":193026,"lane":2,"type":"REAL"},{"time":193515,"lane":3,"type":"REAL"},{"time":193786,"lane":2,"type":"REAL"},{"time":194048,"lane":1,"type":"REAL"},{"time":194398,"lane":1,"type":"REAL"},{"time":194991,"lane":2,"type":"REAL"},{"time":195351,"lane":2,"type":"REAL"},{"time":196026,"lane":3,"type":"REAL"},{"time":196555,"lane":3,"type":"REAL"},{"time":196810,"lane":2,"type":"REAL"},{"time":197056,"lane":1,"type":"REAL"},{"time":197288,"lane":2,"type":"REAL"},{"time":197566,"lane":3,"type":"REAL"},{"time":197771,"lane":2,"type":"REAL"},{"time":198130,"lane":1,"type":"REAL"},{"time":198527,"lane":1,"type":"REAL"},{"time":199052,"lane":2,"type":"REAL"},{"time":199436,"lane":2,"type":"REAL"},{"time":200092,"lane":3,"type":"REAL"},{"time":200295,"lane":1,"type":"REAL"},{"time":200538,"lane":2,"type":"REAL"},{"time":200859,"lane":3,"type":"REAL"},{"time":201047,"lane":2,"type":"REAL"},{"time":201317,"lane":1,"type":"REAL"},{"time":201558,"lane":2,"type":"REAL"},{"time":201840,"lane":3,"type":"REAL"},{"time":202056,"lane":2,"type":"REAL"}]];
-
-    // 데이터를 5레인으로 분산하고 일부를 FAKE로 변경
-    notes = initialRawData[0].map((n, idx) => {
-        let type = 'REAL';
-        // 가짜 노트 확률 조정
-        if (idx % 12 === 0 && idx !== 0) type = 'FAKE'; 
-        return { 
-            time: n.time, 
-            lane: Math.floor(Math.random() * LANE_COUNT) + 1, // 5레인 랜덤
-            type: type, 
-            hit: false 
-        };
-    });
-    notes.sort((a, b) => a.time - b.time);
+    // --- 핵심 로직 ---
 
     function toggleMode() {
-        currentMode = currentMode === 'EDIT' ? 'PLAY' : 'EDIT';
-        const tag = document.getElementById('modeTag');
-        const playStats = document.getElementById('playStats');
+        currentMode = (currentMode === 'EDIT') ? 'PLAY' : 'EDIT';
+        document.getElementById('modeTag').innerText = currentMode + " MODE";
+        document.getElementById('modeTag').className = `mode-indicator MODE-${currentMode}`;
+        document.getElementById('playStats').style.display = (currentMode === 'PLAY') ? 'block' : 'none';
         
-        tag.innerText = currentMode;
-        tag.className = `mode-indicator MODE-${currentMode}`;
-        playStats.style.display = currentMode === 'PLAY' ? 'block' : 'none';
-        
+        // 플레이 모드 진입 시 초기화
         notes.forEach(n => n.hit = false);
-        score = 0; life = 0; 
-        characterState = 'IDLE';
+        score = 0; life = 0; characterState = 'IDLE';
         updateUI();
     }
 
-    function controlAudio() {
-        if (audio.paused) audio.play();
-        else audio.pause();
+    function controlAudio() { 
+        if(audio.paused) audio.play(); 
+        else audio.pause(); 
     }
 
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space') { e.preventDefault(); controlAudio(); }
         if (e.code === 'Tab') { e.preventDefault(); toggleMode(); }
 
-        let lane = 0;
-        if (e.key === '1') lane = 1; else if (e.key === '2') lane = 2; else if (e.key === '3') lane = 3; else if (e.key === '4') lane = 4; else if (e.key === '5') lane = 5;
-
+        let lane = ['1','2','3','4','5'].indexOf(e.key.replace('!', '1').replace('@', '2').replace('#', '3').replace('$', '4').replace('%', '5')) + 1;
+        
         if (lane > 0 && !audio.paused) {
-            const currentTime = audio.currentTime * 1000;
+            const currentTime = Math.floor(audio.currentTime * 1000);
             if (currentMode === 'EDIT') {
-                notes.push({ time: Math.floor(currentTime), lane: lane, type: 'REAL', hit: false });
+                // Shift와 함께 누르면 FAKE 생성
+                const type = e.shiftKey ? 'FAKE' : 'REAL';
+                notes.push({ time: currentTime, lane: lane, type: type, hit: false });
                 notes.sort((a, b) => a.time - b.time);
                 updateUI();
             } else {
@@ -125,195 +116,153 @@
     });
 
     function checkHit(currentTime, lane) {
+        // 판정 범위: 180ms
         const hitNote = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - currentTime) < 180);
-        
         if (hitNote) {
             hitNote.hit = true;
             if (hitNote.type === 'REAL') {
-                score += 100;
-                showJudge("회수성공!", "#FFD700"); 
-                characterState = 'HIT'; // 요원 변신
-            } else if (hitNote.type === 'FAKE') {
-                life += 20; 
-                showJudge("꼰대기습!!", "red");
-                characterState = 'MISS'; // 좌절 포즈
+                score += 10000;
+                showJudge("回數!", "#FFD700");
+                characterState = 'HIT';
+            } else {
+                life += 20;
+                showJudge("檢거!", "red");
+                characterState = 'MISS';
             }
             updateUI();
-            setTimeout(() => characterState = 'IDLE', 400); // 0.4초 후 복귀
+            setTimeout(() => characterState = 'IDLE', 400);
         }
     }
 
     function showJudge(txt, color) {
-        const display = document.getElementById('judge-display');
-        display.innerText = txt;
-        display.style.color = color;
-        if(window.judgeTimer) clearTimeout(window.judgeTimer);
-        window.judgeTimer = setTimeout(() => display.innerText = "", 500);
+        const d = document.getElementById('judge-display');
+        d.innerText = txt; d.style.color = color;
+        setTimeout(() => { if(d.innerText === txt) d.innerText = ""; }, 500);
     }
 
     function updateUI() {
-        document.getElementById('score').innerText = score;
+        document.getElementById('score').innerText = score.toLocaleString();
         document.getElementById('life').innerText = life;
         document.getElementById('noteCount').innerText = notes.length;
-        
-        if (life >= 100) {
-            audio.pause();
-            alert(`정체가 들통났습니다! (들키기 전 회수액: $${score})`);
-            toggleMode();
+        if (life >= 100) { 
+            audio.pause(); 
+            alert("정체가 들통났습니다! 비자금 장부가 압수됩니다."); 
+            toggleMode(); 
         }
     }
 
-    function exportData() {
-        const dataToExport = notes.map(n => ({ time: n.time, lane: n.lane, type: n.type }));
-        navigator.clipboard.writeText(JSON.stringify(dataToExport));
-        alert("데이터를 클립보드에 복사했습니다!");
-    }
-
-    function clearNotes() {
-        if(confirm("모든 노트를 지울까요?")) { notes = []; updateUI(); }
-    }
-
-    // --- 레트로 도트 렌더링 엔진 ---
+    // --- 렌더링 엔진 (도트 그래픽) ---
 
     function drawNote(note, y) {
-        const dynamicLaneWidth = canvas.width / LANE_COUNT;
-        const noteX = (note.lane - 1) * dynamicLaneWidth + 15;
-        const noteW = dynamicLaneWidth - 30;
-        const noteH = 40; 
+        const x = (note.lane - 1) * LANE_WIDTH + 10;
+        const w = LANE_WIDTH - 20;
+        const h = 45;
 
         ctx.save();
-        
+        // 공통 그림자
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.fillRect(x+4, y+4, w, h);
+
         if (note.type === 'REAL') {
-            // 진짜 노트: 도트 현금 가방
-            ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(noteX+4, y+4, noteW, noteH);
-            ctx.fillStyle = "#FFD700"; ctx.fillRect(noteX, y, noteW, noteH);
-            ctx.strokeStyle = "#006400"; ctx.lineWidth = 2; ctx.strokeRect(noteX, y, noteW, noteH);
-            ctx.fillStyle = "#006400"; font = "900 24px 'Courier New'"; ctx.textAlign = "center";
-            ctx.fillText("$", noteX + noteW/2, y + 28);
-        } else if (note.type === 'FAKE') {
-            // FAKE 노트: 도트 서류첩
-            ctx.fillStyle = "#222"; ctx.fillRect(noteX, y, noteW, noteH);
-            ctx.strokeStyle = "red"; ctx.lineWidth = 2; ctx.strokeRect(noteX, y, noteW, noteH);
-            ctx.strokeStyle = "red"; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(noteX+20, y+10); ctx.lineTo(noteX+noteW-20, y+30);
-            ctx.moveTo(noteX+noteW-20, y+10); ctx.lineTo(noteX+20, y+30); ctx.stroke();
+            // [진짜: 초록색 만원다발]
+            ctx.fillStyle = "#2e7d32"; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = "#f5f5dc"; ctx.fillRect(x + w*0.35, y, w*0.3, h); // 띠지
+            ctx.fillStyle = "#fff"; ctx.font = "bold 14px monospace"; 
+            ctx.fillText("₩10000", x+5, y+28);
+            // 디테일 (도트 테두리)
+            ctx.strokeStyle = "#1b5e20"; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+        } else {
+            // [가짜: 회장님 얼굴 지폐]
+            ctx.fillStyle = "#556b2f"; ctx.fillRect(x, y, w, h);
+            // 회장님 도트 얼굴 (회색 머리, 엄격한 표정)
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(x+12, y+10, 20, 25); // 얼굴
+            ctx.fillStyle = "#888"; ctx.fillRect(x+10, y+5, 24, 8); // 머리
+            ctx.fillStyle = "#000"; ctx.fillRect(x+16, y+18, 2, 2); ctx.fillRect(x+26, y+18, 2, 2); // 눈
+            
+            ctx.strokeStyle = "red"; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = "red"; ctx.font = "bold 10px sans-serif"; ctx.fillText("FAKE", x+w-30, y+40);
         }
-        
         ctx.restore();
     }
 
     function drawCharacter() {
-        const charX = 275; // 캔버스 가로 중앙
-        const charY = 820; 
-        
-        ctx.save();
-        ctx.translate(charX, charY);
-        ctx.imageRendering = 'pixelated';
+        const x = canvas.width / 2, y = 840;
+        ctx.save(); ctx.translate(x, y);
 
         if (characterState === 'IDLE') {
-            // [대기: 홍장미] 레퍼런스 이미지 참고
-            // 머리 (검은색, 짧은 웨이브 도트)
-            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(-20, -35, 40, 28);
-            
-            // **별 모양 머리핀 디테일 (별 2개)**
-            ctx.fillStyle = "pink"; 
-            ctx.fillRect(-12, -32, 6, 6); // 별 1
-            ctx.fillStyle = "#ff4500"; 
-            ctx.fillRect(-5, -32, 6, 6); // 별 2
-
-            // 얼굴
-            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-15, -15, 30, 20);
-            
-            // **촌스러운 분홍 폴로셔츠 & 가방 끈**
-            ctx.fillStyle = "pink"; ctx.fillRect(-18, 5, 36, 12); // 폴로 카라
-            ctx.fillStyle = "#8b4513"; ctx.fillRect(-18, 17, 36, 18); // 몸통
-            ctx.fillStyle = "white"; ctx.fillRect(-12, 5, 6, 30); ctx.fillRect(6, 5, 6, 30); // 가방 끈
-
+            // [홍장미 사원: 별 핀 + 분홍 폴로]
+            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(-25, -45, 50, 35); // 머리
+            ctx.fillStyle = "#FFB6C1"; ctx.fillRect(-15, -40, 10, 10); // 별 핀 (핑크)
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-20, -15, 40, 25); // 얼굴
+            ctx.fillStyle = "pink"; ctx.fillRect(-25, 10, 50, 35); // 분홍 셔츠
+            ctx.fillStyle = "white"; ctx.fillRect(-15, 10, 5, 35); ctx.fillRect(10, 10, 5, 35); // 가방 끈
         } else if (characterState === 'HIT') {
-            // [성공: 미쓰홍 요원] 레퍼런스 이미지 참고
-            // 네이비 Suit (세련된 요원 실루엣)
-            ctx.fillStyle = "#000080"; // Navy
-            ctx.fillRect(-18, -35, 36, 70);
-            
-            // **보잉 선글라스 디테일 (Aviator)**
-            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-15, -20, 30, 15); // 얼굴 노출부
-            ctx.fillStyle = "black"; // 선글라스 알
-            ctx.beginPath(); ctx.ellipse(-6, -15, 6, 5, 0, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(6, -15, 6, 5, 0, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = "gold"; ctx.lineWidth = 1; // 테
-            ctx.beginPath(); ctx.ellipse(-6, -15, 6, 5, 0, 0, Math.PI*2); ctx.stroke();
-            ctx.beginPath(); ctx.ellipse(6, -15, 6, 5, 0, 0, Math.PI*2); ctx.stroke();
-            
-            // 황금 가방 낚아채는 팔
-            ctx.fillStyle = "#FFD700"; ctx.fillRect(10, -10, 20, 10);
-            // 반짝이 효과
-            ctx.fillStyle = "white";
-            for(let i=0; i<10; i++) ctx.fillRect(Math.random()*60-30, Math.random()*60-40, 3, 3);
-
+            // [미쓰홍 요원: 선글라스 + 네이비 수트]
+            ctx.fillStyle = "#000033"; ctx.fillRect(-28, -50, 56, 90); // 수트
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-20, -20, 40, 20); // 얼굴부
+            ctx.fillStyle = "black"; ctx.fillRect(-18, -15, 12, 8); ctx.fillRect(6, -15, 12, 8); // 선글라스
+            ctx.strokeStyle = "gold"; ctx.strokeRect(-18, -15, 12, 8); ctx.strokeRect(6, -15, 12, 8);
         } else if (characterState === 'MISS') {
-            // 실수: 좌절 (서류에 파묻힘)
-            ctx.fillStyle = "#ccc"; ctx.fillRect(-25, 0, 50, 40);
-            ctx.fillStyle = "white"; ctx.font = "900 24px monospace"; ctx.fillText("OTL", 0, 25);
+            // [당황: 땀방울]
+            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(-25, -45, 50, 35);
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-20, -15, 40, 25);
+            ctx.fillStyle = "cyan"; ctx.fillRect(25, -20, 5, 10); // 식은땀 도트
         }
-        
         ctx.restore();
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const currentTime = audio.currentTime * 1000;
+        const cur = audio.currentTime * 1000;
         document.getElementById('timeDisplay').innerText = audio.currentTime.toFixed(2);
 
-        // 가이드 라인 (캔버스 전체 너비 기준)
-        ctx.strokeStyle = "rgba(255,255,255,0.07)";
-        ctx.lineWidth = 1;
+        // 레인 구분선
+        ctx.strokeStyle = "rgba(255,255,255,0.05)";
         for(let i=1; i<LANE_COUNT; i++) {
-            let lineX = i * (canvas.width / LANE_COUNT);
-            ctx.beginPath(); ctx.moveTo(lineX, 0); ctx.lineTo(lineX, 950); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(i*LANE_WIDTH, 0); ctx.lineTo(i*LANE_WIDTH, 950); ctx.stroke();
         }
 
-        // 판정선 (캔버스 전체 너비)
-        ctx.fillStyle = currentMode === 'EDIT' ? "#ffeb3b" : "#4caf50";
-        ctx.fillRect(0, 750, canvas.width, 12);
+        // 판정선
+        ctx.fillStyle = (currentMode === 'EDIT') ? "#ffeb3b" : "#4caf50";
+        ctx.fillRect(0, 750, canvas.width, 10);
 
-        // 노트 렌더링
-        notes.forEach(note => {
-            if (note.hit) return;
-            const dropSpeed = 0.7; 
-            const y = 750 - (note.time - currentTime) * dropSpeed;
-
-            if (y > -100 && y < 950) {
-                // 너비 자동 계산
-                const dynamicLaneWidth = canvas.width / LANE_COUNT;
-                drawNote(note, y);
-            }
-
-            // 놓친 노트 처리
-            if (currentMode === 'PLAY' && y > 790 && !note.hit) {
-                note.hit = true;
-                if(note.type === 'REAL') {
-                    life += 8; // 놓치면 의심도 상승
-                    showJudge("MISS", "gray");
-                    characterState = 'MISS';
-                    setTimeout(() => characterState = 'IDLE', 400);
-                }
+        // 노트 그리기
+        notes.forEach(n => {
+            if (n.hit) return;
+            let ny = 750 - (n.time - cur) * 0.75; // 속도 가중치
+            if (ny > -50 && ny < 950) drawNote(n, ny);
+            
+            // 놓친 노트 (Miss)
+            if (currentMode === 'PLAY' && ny > 800 && !n.hit) {
+                n.hit = true;
+                if(n.type === 'REAL') { life += 5; showJudge("MISS", "gray"); }
                 updateUI();
             }
         });
-        
-        // 플레이 모드 UI 및 캐릭터
-        if (currentMode === 'PLAY') {
-            // 레인 번호 표시
-            ctx.fillStyle = "rgba(255,255,255,0.3)";
-            ctx.font = "bold 20px monospace"; ctx.textAlign = "center";
-            for(let i=1; i<=5; i++) {
-                ctx.fillText(i, (i-0.5)*(canvas.width/LANE_COUNT), 740);
-            }
-            drawCharacter();
-        }
 
+        if (currentMode === 'PLAY') drawCharacter();
         requestAnimationFrame(draw);
     }
+
+    // --- 데이터 관리 기능 ---
+    function exportData() {
+        const data = JSON.stringify(notes);
+        document.getElementById('dataArea').value = data;
+        navigator.clipboard.writeText(data);
+        alert("데이터가 복사되었습니다!");
+    }
+
+    function importData() {
+        try {
+            const data = JSON.parse(document.getElementById('dataArea').value);
+            notes = data;
+            notes.sort((a, b) => a.time - b.time);
+            updateUI();
+            alert("장부 데이터를 성공적으로 불러왔습니다.");
+        } catch(e) { alert("데이터 형식이 올바르지 않습니다."); }
+    }
+
+    function clearNotes() { if(confirm("정말 장부를 초기화할까요?")) { notes = []; updateUI(); } }
 
     draw();
 </script>
