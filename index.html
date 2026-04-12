@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>언더커버 미쓰홍 1980 - 디럭스</title>
+    <title>언더커버 미쓰홍 1980 - 이미지 버전</title>
     <style>
         :root {
             --retro-red: #ff3e3e;
@@ -18,7 +18,6 @@
             overflow: hidden; touch-action: none;
         }
 
-        /* [1] 인트로 화면 */
         #intro-screen {
             position: absolute; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -39,7 +38,6 @@
             100% { transform: scale(1); }
         }
 
-        /* [2] 게임 메인 컨테이너 */
         #game-view {
             display: none; width: 100%; height: 100%;
             flex-direction: column;
@@ -55,7 +53,6 @@
         #canvas-wrap { flex: 1; position: relative; background: #050505; overflow: hidden; }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
 
-        /* [3] 레트로 터치 컨트롤 */
         #controller {
             height: 160px; background: var(--gameboy-grey);
             display: flex; justify-content: center; align-items: center; gap: 25px;
@@ -75,7 +72,7 @@
         #judge-tag {
             position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
             font-size: 40px; font-weight: 900; z-index: 10; pointer-events: none;
-            font-style: italic;
+            font-style: italic; text-shadow: 2px 2px #000;
         }
     </style>
 </head>
@@ -106,6 +103,12 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3'); 
+
+    // 이미지 프리로딩
+    const imgRose = new Image(); imgRose.src = '1775988220732(2).png';
+    const imgMiss = new Image(); imgMiss.src = '1775988220732(3).png';
+    const imgRealBill = new Image(); imgRealBill.src = '1775986100725.png';
+    const imgFakeBill = new Image(); imgFakeBill.src = '1775986746405.png';
     
     let isPlaying = false;
     let score = 0, life = 0;
@@ -130,8 +133,7 @@
     }
 
     function startGame() {
-        isPlaying = true;
-        score = 0; life = 0;
+        isPlaying = true; score = 0; life = 0;
         notes = rawData.map(n => ({...n, hit: false, type: Math.random() < 0.2 ? 'FAKE' : 'REAL'}));
         audio.play();
         requestAnimationFrame(gameLoop);
@@ -144,77 +146,65 @@
         
         if(note) {
             note.hit = true;
-            comboEffect = { lane: lane, timer: 10 };
+            comboEffect = { lane: lane, timer: 12 };
             if(note.type === 'REAL') {
-                score += 10000; shake = 8; state = 'HIT';
+                score += 10000; shake = 10; state = 'HIT';
                 setJudge("EXCELLENT!", "#00f2ff");
             } else {
-                life += 20; shake = 15; state = 'PANIC';
-                setJudge("BUSTED!!", "#ff3e3e");
+                life += 20; shake = 20; state = 'PANIC';
+                setJudge("FAKE BILL!!", "#ff3e3e");
             }
             updateUI();
-            setTimeout(() => state = 'IDLE', 500);
+            setTimeout(() => state = 'IDLE', 400);
         }
     }
 
     function setJudge(txt, col) {
         const tag = document.getElementById('judge-tag');
         tag.innerText = txt; tag.style.color = col;
-        setTimeout(() => tag.innerText = '', 400);
+        setTimeout(() => { if(tag.innerText === txt) tag.innerText = ''; }, 400);
     }
 
     function updateUI() {
         document.getElementById('score').innerText = '₩ ' + score.toLocaleString();
         document.getElementById('life').innerText = 'SUS: ' + life + '%';
-        if(life >= 100) { isPlaying = false; alert("정체가 탄로났습니다!"); location.reload(); }
+        if(life >= 100) { isPlaying = false; audio.pause(); alert("미션 실패! 정체가 탄로났습니다."); location.reload(); }
     }
 
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
         const cy = canvas.height * 0.85;
-        const bounce = Math.sin(frame * 0.2) * 5;
-        const jump = (state === 'HIT') ? -20 : 0;
+        const bounce = Math.sin(frame * 0.25) * 6;
+        const jump = (state === 'HIT') ? -35 : 0;
+
+        const charW = 110; 
+        const charH = 130;
 
         ctx.save();
         ctx.translate(cx, cy + bounce + jump);
 
-        if(state === 'IDLE' || state === 'PANIC') {
-            // 홍장미 디테일 (뽀글머리 텍스처)
-            ctx.fillStyle = '#2a1a0a'; 
-            [-28, -10, 10, 20].forEach(ox => ctx.fillRect(ox, -65, 15, 15)); // 뽀글뽀글 정수리
-            ctx.fillRect(-30, -55, 60, 45); // 머리통
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-22, -40, 44, 35); // 얼굴
-            ctx.fillStyle = '#000'; ctx.fillRect(-12, -28, 6, 6); ctx.fillRect(8, -28, 6, 6); // 눈
-            if(state === 'PANIC') { ctx.fillStyle = '#ff0000'; ctx.fillRect(-10, -15, 20, 4); } // 입
-            ctx.fillStyle = '#ff69b4'; ctx.fillRect(-35, -5, 70, 50); // 핑크 자켓
+        if (state === 'HIT') {
+            if (imgMiss.complete) ctx.drawImage(imgMiss, -charW/2, -charH + 20, charW, charH);
         } else {
-            // 미쓰홍 (홍금보 스타일의 절도있는 변신)
-            ctx.fillStyle = '#000'; ctx.fillRect(-28, -75, 56, 110); // 긴 검은 머리
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-22, -40, 44, 35);
-            ctx.fillStyle = '#111'; ctx.fillRect(-25, -28, 20, 12); ctx.fillRect(5, -28, 20, 12); // 블랙 선글라스
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(8, -25, 5, 2); // 선글라스 반짝임
-            ctx.fillStyle = '#000044'; ctx.fillRect(-35, -5, 70, 50); // 정장
+            if (state === 'PANIC') ctx.filter = 'brightness(1.5) sepia(1) hue-rotate(-50deg)';
+            if (imgRose.complete) ctx.drawImage(imgRose, -charW/2, -charH + 20, charW, charH);
+            ctx.filter = 'none';
         }
         ctx.restore();
     }
 
     function drawNote(ctx, n, y) {
         const laneW = canvas.width / 3;
-        const x = (n.lane - 1) * laneW + 15;
-        const w = laneW - 30;
-        const h = 50;
+        const x = (n.lane - 1) * laneW + 12;
+        const w = laneW - 24;
+        const h = 55;
 
-        if(n.type === 'REAL') {
-            ctx.fillStyle = '#2e7d32'; ctx.fillRect(x, y, w, h);
-            ctx.strokeStyle = '#fff'; ctx.strokeRect(x+2, y+2, w-4, h-4);
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 14px monospace'; ctx.fillText("10000", x+10, y+30);
+        const targetImg = (n.type === 'REAL') ? imgRealBill : imgFakeBill;
+        if (targetImg.complete) {
+            ctx.drawImage(targetImg, x, y, w, h);
         } else {
-            // 회장님 지폐 디테일
-            ctx.fillStyle = '#442200'; ctx.fillRect(x, y, w, h); // 칙칙한 갈색 지폐
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(x+w/2-12, y+10, 24, 30); // 얼굴
-            ctx.fillStyle = '#333'; ctx.fillRect(x+w/2-15, y+8, 30, 10); // 대머리 양옆 머리
-            ctx.strokeStyle = '#000'; ctx.strokeRect(x+w/2-10, y+20, 8, 8); ctx.strokeRect(x+w/2+2, y+20, 8, 8); // 안경
-            ctx.fillStyle = '#ff0000'; ctx.font = '900 12px sans-serif'; ctx.fillText("FAKE", x+5, y+15);
+            ctx.fillStyle = (n.type === 'REAL') ? '#2e7d32' : '#ff3e3e';
+            ctx.fillRect(x, y, w, h);
         }
     }
 
@@ -222,30 +212,34 @@
         if(!isPlaying) return;
         frame++;
         
-        // 화면 흔들림 적용
         let sx = (Math.random() - 0.5) * shake;
         let sy = (Math.random() - 0.5) * shake;
-        if(shake > 0) shake *= 0.9;
+        if(shake > 0) shake *= 0.85;
 
         ctx.save();
         ctx.translate(sx, sy);
-        ctx.clearRect(-20, -20, canvas.width+40, canvas.height+40);
+        ctx.clearRect(-50, -50, canvas.width+100, canvas.height+100);
         
         const now = audio.currentTime * 1000;
-        const judgeLineY = canvas.height * 0.8;
+        const judgeLineY = canvas.height * 0.82;
 
-        // 타격 이펙트 (레이저)
         if(comboEffect.timer > 0) {
-            ctx.fillStyle = `rgba(0, 242, 255, ${comboEffect.timer / 10})`;
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'transparent');
+            gradient.addColorStop(1, `rgba(0, 242, 255, ${comboEffect.timer / 15})`);
+            ctx.fillStyle = gradient;
             ctx.fillRect((comboEffect.lane-1)*(canvas.width/3), 0, canvas.width/3, canvas.height);
             comboEffect.timer--;
         }
 
         notes.forEach(n => {
             if(n.hit) return;
-            let ny = judgeLineY - (n.time - now) * 0.6;
+            let ny = judgeLineY - (n.time - now) * 0.65;
             if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
-            if(ny > judgeLineY + 100) { n.hit = true; if(n.type === 'REAL') { life += 5; updateUI(); } }
+            if(ny > judgeLineY + 80) { 
+                n.hit = true; 
+                if(n.type === 'REAL') { life += 5; updateUI(); setJudge("MISS", "#888"); }
+            }
         });
 
         drawCharacter(ctx);
