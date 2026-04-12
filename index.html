@@ -4,20 +4,17 @@
     <meta charset="UTF-8">
     <title>언더커버 미쓰홍: 1990 Retro</title>
     <style>
-        /* 90년대 레트로 베이지 & 모노톤 배색 */
-        :root { --bg: #c0c0c0; --panel: #d3d3d3; --accent: #000080; --retro-green: #2e7d32; }
-        body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        :root { --bg: #c0c0c0; --panel: #d3d3d3; --accent: #000080; }
+        body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Courier New', monospace; overflow: hidden; }
         
-        #game-container { position: relative; width: 850px; height: 920px; background: #000; display: flex; border: 10px double #808080; outline: 5px solid #000; }
-        #game-canvas { width: 66.6%; height: 100%; background: #111; border-right: 6px ridge #808080; image-rendering: pixelated; }
+        #game-container { position: relative; width: 850px; height: 920px; background: #000; display: flex; border: 10px double #808080; }
+        #game-canvas { width: 66.6%; height: 100%; background: #111; image-rendering: pixelated; border-right: 6px ridge #808080; }
         
-        #ui-side { width: 33.4%; height: 100%; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; background: var(--panel); color: #000; box-shadow: inset 4px 4px 0 #fff, inset -4px -4px 0 #808080; }
-        
-        .stat-box { background: #000; color: #00ff00; padding: 15px; border: 3px inset #fff; margin-bottom: 15px; font-size: 18px; line-height: 1.6; }
-        .btn { padding: 12px; background: #c0c0c0; color: #000; border: 3px outset #fff; cursor: pointer; margin-top: 10px; font-weight: bold; text-transform: uppercase; font-size: 14px; }
-        .btn:active { border: 3px inset #fff; }
-        
-        #judge-display { font-size: 36px; font-weight: bold; text-align: center; height: 60px; margin-top: 20px; color: #ff0000; text-shadow: 2px 2px #000; }
+        #ui-side { width: 33.4%; height: 100%; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; background: var(--panel); }
+        .stat-box { background: #000; color: #00ff00; padding: 15px; border: 3px inset #fff; margin-bottom: 15px; font-size: 18px; }
+        .btn { padding: 12px; background: #c0c0c0; border: 3px outset #fff; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
+        #judge-display { font-size: 32px; font-weight: bold; text-align: center; color: #ff0000; height: 50px; }
+        .key-guide { font-size: 12px; color: #555; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
@@ -25,16 +22,16 @@
 <div id="game-container">
     <canvas id="game-canvas" width="560" height="920"></canvas>
     <div id="ui-side">
-        <div style="font-weight:bold; margin-bottom:10px; border-bottom:2px solid #000;">MISSION STATUS</div>
+        <div style="font-weight:bold; margin-bottom:10px;">MISSION: UNDERCOVER</div>
         <div class="stat-box">
             TIME: <span id="timeDisplay">0.00</span>s<br>
             CASH: $<span id="score">0</span><br>
             SUSP: <span id="life">0</span>%
         </div>
         <div id="judge-display"></div>
-        <button class="btn" onclick="controlAudio()">START/STOP [SPC]</button>
-        <button class="btn" onclick="toggleMode()">SWAP MODE [TAB]</button>
-        <div style="margin-top:auto; font-size:12px; color:#444;">(C) 1996 UNDERCOVER PROJECT</div>
+        <button class="btn" onclick="controlAudio()">START/STOP [SPACE]</button>
+        <div class="key-guide">LANE 1: [S] | LANE 2: [D] | LANE 3: [F]</div>
+        <div style="margin-top:auto; font-size:10px;">(C) 1996 UNDERCOVER PROJECT</div>
     </div>
 </div>
 
@@ -43,86 +40,45 @@
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3');
     
-    let currentMode = 'PLAY'; 
-    let score = 0; let life = 0; let characterState = 'IDLE';
+    // --- 이미지 로드 (회장님 지폐) ---
+    const fakeImg = new Image();
+    fakeImg.src = 'image_30bba7.png'; // 업로드하신 이미지 파일명으로 설정
 
+    let score = 0; let life = 0;
     const LANE_COUNT = 3;
     const LANE_WIDTH = canvas.width / LANE_COUNT;
+    const JUDGE_LINE_Y = 780;
 
-    // --- 노트 데이터 (기존 데이터 유지) ---
-    let rawNotes = [{"time":601,"lane":1},{"time":892,"lane":1},{"time":2456,"lane":1},{"time":2775,"lane":1},{"time":3446,"lane":2},{"time":3705,"lane":3},{"time":3892,"lane":1},{"time":4481,"lane":2},{"time":4814,"lane":2},{"time":6508,"lane":3},{"time":6814,"lane":3},{"time":8477,"lane":1},{"time":8855,"lane":1},{"time":9329,"lane":2},{"time":9648,"lane":2},{"time":10502,"lane":3},{"time":10867,"lane":3},{"time":12518,"lane":1},{"time":12930,"lane":2},{"time":14529,"lane":1},{"time":14869,"lane":2},{"time":15291,"lane":1},{"time":15891,"lane":1},{"time":16279,"lane":1},{"time":17559,"lane":1},{"time":17714,"lane":2},{"time":18004,"lane":3},{"time":19586,"lane":1},{"time":19969,"lane":1},{"time":20304,"lane":2},{"time":21594,"lane":3},{"time":21806,"lane":2},{"time":22087,"lane":1},{"time":23886,"lane":1},{"time":24109,"lane":2},{"time":24372,"lane":3},{"time":24559,"lane":2},{"time":24928,"lane":2},{"time":25059,"lane":2},{"time":26193,"lane":3},{"time":26821,"lane":1},{"time":27655,"lane":1},{"time":27830,"lane":2},{"time":28153,"lane":3},{"time":29683,"lane":1},{"time":29907,"lane":2},{"time":30164,"lane":3},{"time":30863,"lane":2},{"time":31678,"lane":1},{"time":31888,"lane":2},{"time":32199,"lane":3},{"time":32669,"lane":2},{"time":33159,"lane":2},{"time":33706,"lane":3},{"time":34200,"lane":3},{"time":34682,"lane":1},{"time":35134,"lane":1},{"time":35639,"lane":2},{"time":36092,"lane":2},{"time":36705,"lane":3},{"time":37202,"lane":3},{"time":37719,"lane":3},{"time":38201,"lane":3},{"time":38648,"lane":1},{"time":39047,"lane":1},{"time":39650,"lane":1},{"time":40164,"lane":1},{"time":40791,"lane":1},{"time":41161,"lane":1},{"time":41662,"lane":2},{"time":42077,"lane":2},{"time":42476,"lane":3},{"time":43513,"lane":1},{"time":43757,"lane":2},{"time":44174,"lane":3},{"time":44514,"lane":1},{"time":44659,"lane":2},{"time":44779,"lane":3},{"time":45533,"lane":1},{"time":45643,"lane":2},{"time":45717,"lane":3},{"time":46725,"lane":1},{"time":46830,"lane":2},{"time":46911,"lane":3},{"time":47685,"lane":1},{"time":47804,"lane":2},{"time":47906,"lane":3},{"time":48751,"lane":1},{"time":51029,"lane":1},{"time":51313,"lane":2},{"time":51589,"lane":3},{"time":51837,"lane":1},{"time":52315,"lane":2},{"time":52640,"lane":3},{"time":52866,"lane":2},{"time":53222,"lane":3},{"time":53789,"lane":1},{"time":54296,"lane":1},{"time":54883,"lane":1},{"time":55183,"lane":1},{"time":55283,"lane":1},{"time":55571,"lane":1},{"time":55825,"lane":1},{"time":56641,"lane":3},{"time":57155,"lane":2},{"time":58867,"lane":1},{"time":59116,"lane":2},{"time":59295,"lane":3},{"time":59663,"lane":2},{"time":59942,"lane":2},{"time":60380,"lane":2},{"time":60587,"lane":2},{"time":61730,"lane":1},{"time":62607,"lane":3},{"time":63636,"lane":2},{"time":64965,"lane":3},{"time":67148,"lane":1},{"time":67438,"lane":2},{"time":67726,"lane":3},{"time":67975,"lane":2},{"time":68470,"lane":3},{"time":68681,"lane":2},{"time":69009,"lane":1},{"time":70992,"lane":1},{"time":71225,"lane":2},{"time":71388,"lane":3},{"time":71740,"lane":2},{"time":72017,"lane":1},{"time":72462,"lane":2},{"time":72978,"lane":3},{"time":73478,"lane":3},{"time":73986,"lane":3},{"time":74387,"lane":3},{"time":74983,"lane":2},{"time":75393,"lane":1},{"time":76540,"lane":3},{"time":76730,"lane":2},{"time":77530,"lane":3},{"time":77795,"lane":2},{"time":78552,"lane":3},{"time":78805,"lane":1},{"time":79310,"lane":1},{"time":80813,"lane":2},{"time":81014,"lane":3},{"time":85136,"lane":1},{"time":85510,"lane":1},{"time":86133,"lane":2},{"time":86627,"lane":2},{"time":87161,"lane":3},{"time":87511,"lane":3},{"time":88117,"lane":1},{"time":88674,"lane":1},{"time":88998,"lane":1},{"time":89449,"lane":2},{"time":90620,"lane":1},{"time":90929,"lane":2},{"time":91032,"lane":3},{"time":92684,"lane":2},{"time":92972,"lane":2},{"time":93142,"lane":2},{"time":93468,"lane":3},{"time":94668,"lane":1},{"time":95012,"lane":2},{"time":95098,"lane":3},{"time":96725,"lane":1},{"time":97054,"lane":2},{"time":97173,"lane":3},{"time":97519,"lane":1},{"time":98396,"lane":2},{"time":98718,"lane":3},{"time":98988,"lane":2},{"time":99134,"lane":1},{"time":100446,"lane":1},{"time":100956,"lane":2},{"time":101192,"lane":2},{"time":101714,"lane":3},{"time":102201,"lane":1},{"time":102728,"lane":2},{"time":103003,"lane":2},{"time":105267,"lane":3},{"time":105697,"lane":3},{"time":106242,"lane":2},{"time":106838,"lane":2},{"time":107326,"lane":1},{"time":107717,"lane":1},{"time":108221,"lane":2},{"time":108712,"lane":2},{"time":109248,"lane":3},{"time":109728,"lane":3},{"time":110283,"lane":3},{"time":110784,"lane":3},{"time":111309,"lane":1},{"time":111650,"lane":1},{"time":112128,"lane":1},{"time":112359,"lane":1},{"time":112786,"lane":2},{"time":113322,"lane":3},{"time":113750,"lane":3},{"time":114361,"lane":2},{"time":114740,"lane":1},{"time":115074,"lane":2},{"time":115382,"lane":3},{"time":115853,"lane":2},{"time":116345,"lane":1},{"time":116762,"lane":1},{"time":117109,"lane":2},{"time":117377,"lane":2},{"time":117874,"lane":2},{"time":118347,"lane":3},{"time":118879,"lane":3},{"time":119380,"lane":1},{"time":119723,"lane":1},{"time":120362,"lane":1},{"time":120859,"lane":1},{"time":121386,"lane":1},{"time":123590,"lane":1},{"time":123881,"lane":2},{"time":124175,"lane":3},{"time":124428,"lane":1},{"time":124921,"lane":2},{"time":125237,"lane":3},{"time":125491,"lane":2},{"time":125883,"lane":2},{"time":127428,"lane":1},{"time":127706,"lane":2},{"time":127805,"lane":3},{"time":128196,"lane":1},{"time":128440,"lane":2},{"time":128954,"lane":3},{"time":129218,"lane":2},{"time":131464,"lane":3},{"time":131744,"lane":2},{"time":131901,"lane":1},{"time":132435,"lane":1},{"time":132953,"lane":2},{"time":133266,"lane":3},{"time":133499,"lane":2},{"time":134232,"lane":1},{"time":135242,"lane":1},{"time":136286,"lane":1},{"time":137385,"lane":1},{"time":137551,"lane":2},{"time":139847,"lane":1},{"time":140013,"lane":2},{"time":140312,"lane":3},{"time":140572,"lane":2},{"time":141042,"lane":1},{"time":141324,"lane":2},{"time":141593,"lane":3},{"time":143614,"lane":1},{"time":143879,"lane":2},{"time":143997,"lane":3},{"time":144364,"lane":2},{"time":144587,"lane":1},{"time":145064,"lane":2},{"time":145364,"lane":3},{"time":145588,"lane":2},{"time":146142,"lane":2},{"time":146622,"lane":2},{"time":147083,"lane":2},{"time":147330,"lane":1},{"time":147801,"lane":2},{"time":148370,"lane":3},{"time":148703,"lane":1},{"time":149138,"lane":2},{"time":149439,"lane":3},{"time":149640,"lane":1},{"time":149882,"lane":2},{"time":150201,"lane":3},{"time":150398,"lane":2},{"time":151117,"lane":1},{"time":151389,"lane":2},{"time":151687,"lane":3},{"time":152146,"lane":2},{"time":152416,"lane":2},{"time":152689,"lane":2},{"time":153481,"lane":1},{"time":153636,"lane":2},{"time":153996,"lane":3},{"time":154518,"lane":3},{"time":157750,"lane":1},{"time":158223,"lane":2},{"time":158470,"lane":3},{"time":158724,"lane":2},{"time":159197,"lane":1},{"time":159730,"lane":2},{"time":160082,"lane":2},{"time":160496,"lane":2},{"time":160719,"lane":1},{"time":161210,"lane":2},{"time":161524,"lane":3},{"time":161740,"lane":2},{"time":162131,"lane":1},{"time":162763,"lane":2},{"time":163280,"lane":2},{"time":163567,"lane":2},{"time":163794,"lane":3},{"time":164122,"lane":1},{"time":164527,"lane":2},{"time":164776,"lane":3},{"time":165020,"lane":1},{"time":165275,"lane":2},{"time":165589,"lane":3},{"time":166104,"lane":2},{"time":166326,"lane":2},{"time":166638,"lane":2},{"time":166882,"lane":1},{"time":167282,"lane":2},{"time":167790,"lane":1},{"time":168044,"lane":2},{"time":168321,"lane":3},{"time":168536,"lane":2},{"time":168799,"lane":1},{"time":169047,"lane":2},{"time":169300,"lane":3},{"time":169526,"lane":2},{"time":169800,"lane":1},{"time":172093,"lane":1},{"time":172347,"lane":2},{"time":172601,"lane":3},{"time":172850,"lane":2},{"time":173338,"lane":1},{"time":173577,"lane":2},{"time":173913,"lane":3},{"time":175886,"lane":1},{"time":176140,"lane":2},{"time":176260,"lane":3},{"time":176609,"lane":1},{"time":176864,"lane":2},{"time":177375,"lane":3},{"time":177641,"lane":2},{"time":177909,"lane":1},{"time":179621,"lane":1},{"time":180086,"lane":2},{"time":181425,"lane":2},{"time":181673,"lane":3},{"time":182389,"lane":1},{"time":182413,"lane":2},{"time":182699,"lane":2},{"time":183388,"lane":1},{"time":183683,"lane":2},{"time":183922,"lane":3},{"time":184180,"lane":2},{"time":184436,"lane":1},{"time":184667,"lane":2},{"time":184968,"lane":3},{"time":185243,"lane":2},{"time":185447,"lane":1},{"time":185740,"lane":2},{"time":185962,"lane":2},{"time":186456,"lane":2},{"time":186952,"lane":2},{"time":187465,"lane":2},{"time":187930,"lane":1},{"time":188234,"lane":1},{"time":188479,"lane":2},{"time":188740,"lane":2},{"time":189067,"lane":3},{"time":189477,"lane":1},{"time":189720,"lane":2},{"time":190015,"lane":3},{"time":190490,"lane":2},{"time":191028,"lane":3},{"time":191531,"lane":2},{"time":192013,"lane":1},{"time":192260,"lane":2},{"time":192369,"lane":3},{"time":192748,"lane":1},{"time":193026,"lane":2},{"time":193515,"lane":3},{"time":193786,"lane":2},{"time":194048,"lane":1},{"time":194398,"lane":1},{"time":194991,"lane":2},{"time":195351,"lane":2},{"time":196026,"lane":3},{"time":196555,"lane":3},{"time":196810,"lane":2},{"time":197056,"lane":1},{"time":197288,"lane":2},{"time":197566,"lane":3},{"time":197771,"lane":2},{"time":198130,"lane":1},{"time":198527,"lane":1},{"time":199052,"lane":2},{"time":199436,"lane":2},{"time":200092,"lane":3},{"time":200295,"lane":1},{"time":200538,"lane":2},{"time":200859,"lane":3},{"time":201047,"lane":2},{"time":201317,"lane":1},{"time":201558,"lane":2},{"time":201840,"lane":3},{"time":202056,"lane":2}];
+    // 키 눌림 상태 시각화용
+    let keyEffect = [false, false, false];
 
+    // 노트 데이터
+    let rawNotes = [{"time":601,"lane":1},{"time":892,"lane":1},{"time":2456,"lane":1},{"time":2775,"lane":1},{"time":3446,"lane":2},{"time":3705,"lane":3},{"time":3892,"lane":1},{"time":4481,"lane":2},{"time":4814,"lane":2},{"time":6508,"lane":3},{"time":6814,"lane":3},{"time":8477,"lane":1},{"time":8855,"lane":1},{"time":9329,"lane":2},{"time":9648,"lane":2},{"time":10502,"lane":3},{"time":10867,"lane":3},{"time":12518,"lane":1},{"time":12930,"lane":2},{"time":14529,"lane":1},{"time":14869,"lane":2},{"time":15291,"lane":1},{"time":15891,"lane":1},{"time":16279,"lane":1},{"time":17559,"lane":1},{"time":17714,"lane":2},{"time":18004,"lane":3},{"time":19586,"lane":1},{"time":19969,"lane":1},{"time":20304,"lane":2},{"time":21594,"lane":3},{"time":21806,"lane":2},{"time":22087,"lane":1},{"time":23886,"lane":1},{"time":24109,"lane":2},{"time":24372,"lane":3}];
+    
     let notes = rawNotes.map(n => ({
         ...n,
-        type: Math.random() < 0.18 ? 'FAKE' : 'REAL', 
+        type: Math.random() < 0.2 ? 'FAKE' : 'REAL',
         hit: false
     }));
 
-    // --- 그래픽 엔진 ---
     function drawNote(note, y) {
         const x = (note.lane - 1) * LANE_WIDTH + (LANE_WIDTH / 2);
-        const w = 130; const h = 50;
+        const w = 120; const h = 60;
 
-        ctx.save();
-        ctx.translate(x, y);
-
-        // 90년대 도트 스타일: 검정 테두리 + 하이라이트
-        ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
-        ctx.fillStyle = note.type === 'REAL' ? "#2e7d32" : "#800000";
-        ctx.fillRect(-w/2, -h/2, w, h);
-        ctx.strokeRect(-w/2, -h/2, w, h);
-
-        if (note.type === 'REAL') {
-            // 일반 지폐 (초록 만원권 느낌)
-            ctx.fillStyle = "#c0c0c0"; ctx.fillRect(-15, -h/2 + 5, 30, h-10);
-            ctx.fillStyle = "#000"; ctx.font = "bold 24px monospace"; ctx.textAlign = "center";
-            ctx.fillText("₩", 0, 8);
+        if (note.type === 'FAKE' && fakeImg.complete) {
+            // 회장님 지폐 이미지 그리기
+            ctx.drawImage(fakeImg, x - w/2, y - h/2, w, h);
+            // 레트로한 테두리 추가
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
+            ctx.strokeRect(x - w/2, y - h/2, w, h);
         } else {
-            // 회장님 지폐 (도트 초상화)
-            ctx.fillStyle = "#ffe0bd"; ctx.fillRect(-25, -18, 50, 36);
-            ctx.strokeRect(-25, -18, 50, 36);
-            
-            // 눈 (박신혜 느낌 - 크고 맑게)
-            ctx.fillStyle = "#000";
-            ctx.beginPath(); ctx.arc(-10, -5, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(10, -5, 5, 0, Math.PI * 2); ctx.fill();
-            // 눈동자 하이라이트
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(-12, -7, 2, 2); ctx.fillRect(8, -7, 2, 2);
+            // 일반 지폐 (초록색 도트)
+            ctx.fillStyle = "#2e7d32";
+            ctx.fillRect(x - w/2, y - h/2, w, h);
+            ctx.strokeStyle = "#fff"; ctx.strokeRect(x - w/2, y - h/2, w, h);
+            ctx.fillStyle = "#fff"; ctx.font = "20px monospace";
+            ctx.textAlign = "center"; ctx.fillText("₩", x, y + 7);
         }
-        ctx.restore();
-    }
-
-    function drawCharacter() {
-        const charX = canvas.width / 2;
-        const charY = 820;
-
-        ctx.save();
-        ctx.translate(charX, charY);
-        
-        // 홍금보 (긴 머리 + 진한 테두리)
-        ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
-        
-        // 긴 머리 실루엣
-        ctx.fillStyle = "#1a1a1a";
-        ctx.fillRect(-45, -50, 90, 80); ctx.strokeRect(-45, -50, 90, 80);
-
-        // 얼굴
-        ctx.fillStyle = "#ffe0bd";
-        ctx.fillRect(-30, -35, 60, 50); ctx.strokeRect(-30, -35, 60, 50);
-
-        // 박신혜 배우 느낌의 큰 눈
-        ctx.fillStyle = "#000";
-        ctx.beginPath(); ctx.arc(-14, -15, 7, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(14, -15, 7, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#fff"; // 눈동자 반짝임
-        ctx.fillRect(-16, -18, 3, 3); ctx.fillRect(12, -18, 3, 3);
-
-        // 의상 (레트로 정장)
-        ctx.fillStyle = "#000080";
-        ctx.fillRect(-35, 15, 70, 60); ctx.strokeRect(-35, 15, 70, 60);
-
-        ctx.restore();
     }
 
     function draw() {
@@ -130,67 +86,76 @@
         const currentTime = audio.currentTime * 1000;
         document.getElementById('timeDisplay').innerText = audio.currentTime.toFixed(2);
 
-        // 레인 배경
+        // 레인 & 키 효과
         for(let i=0; i<LANE_COUNT; i++) {
-            ctx.fillStyle = i % 2 === 0 ? "#1a1a1a" : "#111";
-            ctx.fillRect(i*LANE_WIDTH, 0, LANE_WIDTH, 920);
+            ctx.fillStyle = keyEffect[i] ? "#333" : "#111";
+            ctx.fillRect(i*LANE_WIDTH, 0, LANE_WIDTH, canvas.height);
         }
 
-        // 판정선 (네온 그린)
+        // 판정선
         ctx.fillStyle = "#00ff00";
-        ctx.fillRect(0, 780, canvas.width, 10);
+        ctx.fillRect(0, JUDGE_LINE_Y, canvas.width, 5);
 
-        // 노트 렌더링
+        // 노트
         notes.forEach(note => {
             if (note.hit) return;
-            const y = 780 - (note.time - currentTime) * 0.75;
-            if (y > -100 && y < 920) drawNote(note, y);
+            const y = JUDGE_LINE_Y - (note.time - currentTime) * 0.75;
+            if (y > -50 && y < 950) drawNote(note, y);
+            
+            // 놓친 노트 처리 (Miss)
+            if (y > JUDGE_LINE_Y + 50 && !note.hit) {
+                note.hit = true;
+                if(note.type === 'REAL') {
+                   document.getElementById('judge-display').innerText = "MISS";
+                }
+            }
         });
 
-        drawCharacter();
         requestAnimationFrame(draw);
     }
 
+    // 판정 함수
+    function checkHit(lane) {
+        if (audio.paused) return;
+        const currentTime = audio.currentTime * 1000;
+        
+        for (let note of notes) {
+            if (note.hit || note.lane !== lane) continue;
+            const noteY = JUDGE_LINE_Y - (note.time - currentTime) * 0.75;
+            
+            if (Math.abs(noteY - JUDGE_LINE_Y) < 60) {
+                note.hit = true;
+                if (note.type === 'REAL') {
+                    score += 100;
+                    document.getElementById('judge-display').innerText = "PERFECT!";
+                } else {
+                    life += 15; // Fake 노트를 누르면 의심도 대폭 상승
+                    document.getElementById('judge-display').innerText = "BUSTED!!";
+                }
+                document.getElementById('score').innerText = score;
+                document.getElementById('life').innerText = life;
+                break; 
+            }
+        }
+    }
+
+    // 입력 이벤트
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') { controlAudio(); e.preventDefault(); }
+        if (e.key === 's' || e.key === 'S') { keyEffect[0] = true; checkHit(1); }
+        if (e.key === 'd' || e.key === 'D') { keyEffect[1] = true; checkHit(2); }
+        if (e.key === 'f' || e.key === 'F') { keyEffect[2] = true; checkHit(3); }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 's' || e.key === 'S') keyEffect[0] = false;
+        if (e.key === 'd' || e.key === 'D') keyEffect[1] = false;
+        if (e.key === 'f' || e.key === 'F') keyEffect[2] = false;
+    });
+
     function controlAudio() { audio.paused ? audio.play() : audio.pause(); }
-    function toggleMode() { /* 추후 에디터 전환 기능 */ }
 
     draw();
-    // 1. 키보드 입력 감지 (S, D, F 키 사용 예시)
-window.addEventListener('keydown', (e) => {
-    let lane = 0;
-    if (e.key === 's' || e.key === 'S') lane = 1;
-    if (e.key === 'd' || e.key === 'D') lane = 2;
-    if (e.key === 'f' || e.key === 'F') lane = 3;
-
-    if (lane > 0) checkHit(lane);
-});
-
-// 2. 판정 로직
-function checkHit(lane) {
-    const currentTime = audio.currentTime * 1000;
-    const judgeLineY = 780; // 판정선 위치
-    
-    notes.forEach(note => {
-        if (note.hit || note.lane !== lane) return;
-        
-        // 노트의 현재 Y축 위치 계산
-        const noteY = judgeLineY - (note.time - currentTime) * 0.75;
-        
-        // 판정 범위 (판정선 기준 +- 50px 정도면 Perfect)
-        if (Math.abs(noteY - judgeLineY) < 50) {
-            note.hit = true;
-            if (note.type === 'REAL') {
-                score += 100; // 일반 지폐는 점수 증가
-                document.getElementById('judge-display').innerText = "PERFECT!";
-            } else {
-                life += 10; // 회장님 지폐(FAKE)를 치면 의심도 상승!
-                document.getElementById('judge-display').innerText = "CAUTION!";
-            }
-            document.getElementById('score').innerText = score;
-            document.getElementById('life').innerText = life;
-        }
-    });
-}
 </script>
 </body>
 </html>
