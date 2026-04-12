@@ -51,21 +51,27 @@
     const LANE_WIDTH = canvas.width / LANE_COUNT;
 
     function toggleMode() {
-        currentMode = (currentMode === 'EDIT') ? 'PLAY' : 'EDIT';
-        const tag = document.getElementById('modeTag');
-        tag.innerText = currentMode === 'EDIT' ? "장부 편집 중" : "비자금 회수 중";
-        tag.className = `mode-tag MODE-${currentMode}`;
-        document.getElementById('playStats').style.display = (currentMode === 'PLAY') ? 'block' : 'none';
+        // 모드 전환 전 데이터 정리
+        const isNowPlay = (currentMode === 'EDIT');
+        currentMode = isNowPlay ? 'PLAY' : 'EDIT';
         
-        if(currentMode === 'PLAY') {
-            // [업데이트] 플레이 시작 시 REAL 중 일부를 무작위로 FAKE로 변환
-            notes.forEach(n => {
-                n.hit = false;
-                if(n.type === 'REAL' && Math.random() < 0.15) n.type = 'FAKE'; 
-            });
+        const tag = document.getElementById('modeTag');
+        tag.innerText = isNowPlay ? "비자금 회수 중" : "장부 편집 중";
+        tag.className = `mode-tag MODE-${currentMode}`;
+        document.getElementById('playStats').style.display = isNowPlay ? 'block' : 'none';
+        
+        const curT = audio.currentTime * 1000;
+        
+        if(isNowPlay) {
             score = 0; life = 0;
+            // 현재 시간보다 앞에 있는 노트들은 모두 '처리됨(hit)'으로 간주하여 팝업 방지
+            notes.forEach(n => {
+                n.hit = (n.time < curT); 
+                // REAL 노트 중 일부를 무작위 FAKE로 변환
+                if(!n.hit && n.type === 'REAL' && Math.random() < 0.2) n.type = 'FAKE';
+            });
         } else {
-            // 에디터 복귀 시 다시 REAL로 복구 (편집 편의성)
+            // 에디터 복귀 시 가시성을 위해 다시 REAL로 통일
             notes.forEach(n => { if(n.type === 'FAKE') n.type = 'REAL'; });
         }
         updateUI();
