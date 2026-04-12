@@ -2,19 +2,20 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>언더커버 미쓰홍: 비자금 디펜스 (V2)</title>
+    <title>언더커버 미쓰홍: 비자금 디펜스 (v2.5 Reset Version)</title>
     <style>
         :root { --bg: #f0f0e0; --panel: #dcdcae; --accent: #333; --green: #2e7d32; --red: #d32f2f; }
         body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; overflow: hidden; }
         #game-container { position: relative; width: 950px; height: 900px; background: #111; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 10px solid var(--accent); border-radius: 15px; }
         #game-canvas { width: 60%; height: 100%; background: #1a1a1a; border-right: 5px solid var(--accent); image-rendering: pixelated; }
         #ui-side { width: 40%; height: 100%; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; background: var(--panel); }
-        .mode-tag { font-size: 28px; font-weight: 900; text-align: center; padding: 15px; margin-bottom: 20px; border: 4px solid var(--accent); }
+        .mode-tag { font-size: 28px; font-weight: 900; text-align: center; padding: 15px; margin-bottom: 20px; border: 4px solid var(--accent); box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
         .MODE-EDIT { background: #ffeb3b; color: #000; }
         .MODE-PLAY { background: var(--green); color: #fff; }
         .stat-box { background: rgba(255,255,255,0.8); padding: 15px; border-radius: 10px; margin-bottom: 12px; font-family: monospace; border: 2px solid var(--accent); }
-        .btn { padding: 15px; background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 10px; font-weight: bold; border-radius: 5px; }
-        textarea { width: 100%; height: 80px; margin-top: 10px; font-size: 11px; border-radius: 5px; border: 1px solid #777; }
+        .btn { padding: 15px; background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 10px; font-weight: bold; border-radius: 5px; transition: 0.2s; }
+        .btn:hover { opacity: 0.8; }
+        textarea { width: 100%; height: 80px; margin-top: 10px; font-size: 11px; border-radius: 5px; border: 1px solid #777; background: #fdfdfd; }
         #judge-display { font-size: 50px; font-weight: 900; text-align: center; height: 65px; margin-top: 20px; text-shadow: 3px 3px 0px #000; }
     </style>
 </head>
@@ -26,15 +27,22 @@
         <div id="modeTag" class="mode-tag MODE-EDIT">장부 편집 중</div>
         <button class="btn" style="background:#555" onclick="toggleMode()">모드 전환 (Tab)</button>
         <div class="stat-box">TIME: <span id="timeDisplay">0.00</span>s | NOTES: <span id="noteCount">0</span></div>
+        
         <div id="playStats" style="display:none;">
             <div class="stat-box" style="color:var(--green)">회수액: ₩<span id="score">0</span></div>
             <div class="stat-box" style="color:var(--red)">의심도: <span id="life">0</span>%</div>
             <div id="judge-display"></div>
         </div>
+
         <button class="btn" onclick="controlAudio()">음악 재생/정지 (Space)</button>
-        <textarea id="dataArea" readonly placeholder="장부 데이터 자동 복사용"></textarea>
-        <button class="btn" onclick="exportData()">JSON 데이터 수동 복사</button>
-        <button class="btn" style="background:var(--red)" onclick="notes=[]">장부 초기화</button>
+        <textarea id="dataArea" readonly placeholder="장부 데이터 자동 업데이트"></textarea>
+        <button class="btn" onclick="exportData()">데이터 수동 복사</button>
+        <button class="btn" style="background:var(--red)" onclick="if(confirm('장부를 비울까요?')) {notes=[]; updateUI();}">장부 초기화</button>
+        
+        <div style="margin-top: auto; font-size: 12px; color: #666; line-height: 1.5;">
+            * <b>편집 모드:</b> 숫자키로 노트 생성<br>
+            * <b>플레이 모드:</b> 전환 시 0초부터 시작
+        </div>
     </div>
 </div>
 
@@ -47,31 +55,34 @@
     let notes = []; 
     let score = 0, life = 0;
     let characterState = 'IDLE'; 
-    const LANE_COUNT = 5;
+    const LANE_COUNT = 3;
     const LANE_WIDTH = canvas.width / LANE_COUNT;
 
+    // --- 모드 전환 및 리셋 로직 ---
     function toggleMode() {
-        // 모드 전환 전 데이터 정리
-        const isNowPlay = (currentMode === 'EDIT');
-        currentMode = isNowPlay ? 'PLAY' : 'EDIT';
+        const enteringPlayMode = (currentMode === 'EDIT');
+        currentMode = enteringPlayMode ? 'PLAY' : 'EDIT';
         
         const tag = document.getElementById('modeTag');
-        tag.innerText = isNowPlay ? "비자금 회수 중" : "장부 편집 중";
+        tag.innerText = enteringPlayMode ? "비자금 회수 중" : "장부 편집 중";
         tag.className = `mode-tag MODE-${currentMode}`;
-        document.getElementById('playStats').style.display = isNowPlay ? 'block' : 'none';
+        document.getElementById('playStats').style.display = enteringPlayMode ? 'block' : 'none';
         
-        const curT = audio.currentTime * 1000;
-        
-        if(isNowPlay) {
-            score = 0; life = 0;
-            // 현재 시간보다 앞에 있는 노트들은 모두 '처리됨(hit)'으로 간주하여 팝업 방지
+        if(enteringPlayMode) {
+            // [핵심] 플레이 모드 전환 시 음악과 노트를 처음으로 리셋
+            audio.currentTime = 0; 
+            audio.play();
+            score = 0; 
+            life = 0;
+            
             notes.forEach(n => {
-                n.hit = (n.time < curT); 
-                // REAL 노트 중 일부를 무작위 FAKE로 변환
-                if(!n.hit && n.type === 'REAL' && Math.random() < 0.2) n.type = 'FAKE';
+                n.hit = false; // 모든 노트 미사용 상태로
+                // 15% 확률로 FAKE(회장님) 변환
+                if(n.type === 'REAL' && Math.random() < 0.15) n.type = 'FAKE';
             });
         } else {
-            // 에디터 복귀 시 가시성을 위해 다시 REAL로 통일
+            // 편집 모드로 돌아올 때 오디오 일시정지 및 가독성을 위해 REAL로 통일
+            audio.pause();
             notes.forEach(n => { if(n.type === 'FAKE') n.type = 'REAL'; });
         }
         updateUI();
@@ -83,7 +94,7 @@
         if (e.code === 'Space') { e.preventDefault(); controlAudio(); }
         if (e.code === 'Tab') { e.preventDefault(); toggleMode(); }
 
-        let lane = ['1','2','3','4','5'].indexOf(e.key) + 1;
+        let lane = ['1','2','3'].indexOf(e.key) + 1;
         if (lane > 0 && !audio.paused) {
             const curT = Math.floor(audio.currentTime * 1000);
             if (currentMode === 'EDIT') {
@@ -120,42 +131,37 @@
         document.getElementById('score').innerText = score.toLocaleString();
         document.getElementById('life').innerText = life;
         document.getElementById('noteCount').innerText = notes.length;
-        if(life >= 100) { audio.pause(); alert("들통났습니다!"); toggleMode(); }
+        if(life >= 100 && currentMode === 'PLAY') { 
+            audio.pause(); 
+            alert("의심도가 100%입니다! 정체가 탄로 났습니다."); 
+            toggleMode(); 
+        }
     }
 
     function exportData() {
-        const data = JSON.stringify(notes);
-        document.getElementById('dataArea').value = data;
+        document.getElementById('dataArea').value = JSON.stringify(notes);
     }
 
-    // --- 그래픽 엔진 ---
-
+    // --- 그래픽 엔진 (미쓰홍 & 홍장미) ---
     function drawCharacter() {
         const x = canvas.width / 2, y = 800;
         ctx.save(); ctx.translate(x, y);
 
         if (characterState === 'IDLE') {
-            // [홍장미 모드] 웨이브 단발 + 별핀 + 눈
-            ctx.fillStyle = "#1a1a1a"; 
-            ctx.fillRect(-30, -50, 60, 40); // 머리 베이스
-            ctx.fillRect(-35, -30, 10, 20); ctx.fillRect(25, -30, 10, 20); // 웨이브 끝단
-            
-            ctx.fillStyle = "#FFB6C1"; ctx.fillRect(-22, -45, 12, 12); // 별 머리핀
-            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-25, -20, 50, 30); // 얼굴
-            
-            // 눈 (이미지 레퍼런스 반영)
+            // 홍장미 사원: 웨이브 단발, 별핀, 눈동자
+            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(-30, -50, 60, 40); 
+            ctx.fillRect(-35, -30, 10, 20); ctx.fillRect(25, -30, 10, 20); 
+            ctx.fillStyle = "#FFB6C1"; ctx.fillRect(-22, -45, 12, 12); 
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-25, -20, 50, 30); 
             ctx.fillStyle = "#333"; ctx.fillRect(-12, -10, 4, 4); ctx.fillRect(8, -10, 4, 4); 
-            
-            ctx.fillStyle = "pink"; ctx.fillRect(-30, 10, 60, 30); // 분홍 폴로
-            ctx.fillStyle = "white"; ctx.fillRect(-18, 10, 6, 30); ctx.fillRect(12, 10, 6, 30); // 가방끈
+            ctx.fillStyle = "pink"; ctx.fillRect(-30, 10, 60, 30); 
+            ctx.fillStyle = "white"; ctx.fillRect(-18, 10, 6, 30); ctx.fillRect(12, 10, 6, 30); 
         } else {
-            // [미쓰홍 요원 모드] 긴 생머리 + 정장 + 선글라스
-            ctx.fillStyle = "#000"; ctx.fillRect(-30, -50, 60, 90); // 긴 생머리
-            ctx.fillStyle = "#000044"; ctx.fillRect(-28, -10, 56, 60); // 네이비 정장
-            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-22, -20, 44, 25); // 얼굴부
-            
-            // 선글라스 (금테 보잉)
-            ctx.fillStyle = "gold"; ctx.fillRect(-18, -12, 36, 2); // 테
+            // 미쓰홍 요원: 긴 생머리, 정장, 금테 선글라스
+            ctx.fillStyle = "#000"; ctx.fillRect(-30, -50, 60, 90); 
+            ctx.fillStyle = "#000044"; ctx.fillRect(-28, -10, 56, 60); 
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(-22, -20, 44, 25); 
+            ctx.fillStyle = "gold"; ctx.fillRect(-18, -12, 36, 2); 
             ctx.fillStyle = "black"; ctx.fillRect(-17, -10, 14, 10); ctx.fillRect(3, -10, 14, 10); 
         }
         ctx.restore();
@@ -166,13 +172,12 @@
         ctx.save();
         if (n.type === 'REAL') {
             ctx.fillStyle = "#2e7d32"; ctx.fillRect(x, y, w, h);
-            ctx.fillStyle = "#f5f5dc"; ctx.fillRect(x + w*0.35, y, w*0.3, h); // 띠지
+            ctx.fillStyle = "#f5f5dc"; ctx.fillRect(x + w*0.35, y, w*0.25, h); 
             ctx.fillStyle = "white"; ctx.font = "bold 13px monospace"; ctx.fillText("10000", x+5, y+28);
         } else {
-            // 회장님 얼굴 (image_302a1d.png 반영)
             ctx.fillStyle = "#444"; ctx.fillRect(x, y, w, h);
-            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(x+15, y+10, 20, 25); // 얼굴
-            ctx.fillStyle = "#888"; ctx.fillRect(x+12, y+5, 26, 8); // 회색 머리
+            ctx.fillStyle = "#FFDAB9"; ctx.fillRect(x+15, y+10, 20, 25); 
+            ctx.fillStyle = "#888"; ctx.fillRect(x+12, y+5, 26, 8); 
             ctx.strokeStyle = "red"; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
         }
         ctx.restore();
@@ -183,11 +188,13 @@
         const cur = audio.currentTime * 1000;
         document.getElementById('timeDisplay').innerText = audio.currentTime.toFixed(2);
 
-        // 가이드 및 판정선
+        // 레인 가이드
         ctx.strokeStyle = "rgba(255,255,255,0.1)";
         for(let i=1; i<LANE_COUNT; i++) {
             ctx.beginPath(); ctx.moveTo(i*LANE_WIDTH, 0); ctx.lineTo(i*LANE_WIDTH, 900); ctx.stroke();
         }
+        
+        // 판정선
         ctx.fillStyle = currentMode === 'EDIT' ? "#ffeb3b" : "#4caf50";
         ctx.fillRect(0, 720, canvas.width, 10);
 
@@ -195,8 +202,10 @@
             if (n.hit) return;
             let ny = 720 - (n.time - cur) * 0.8;
             if (ny > -50 && ny < 900) drawNote(n, ny);
+            
             if (currentMode === 'PLAY' && ny > 760 && !n.hit) {
-                n.hit = true; if(n.type === 'REAL') life += 10; updateUI();
+                n.hit = true; 
+                if(n.type === 'REAL') { life += 10; updateUI(); }
             }
         });
 
