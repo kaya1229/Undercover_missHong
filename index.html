@@ -2,160 +2,284 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>언더커버 미쓰홍: 1990 Retro</title>
+    <title>언더커버 미쓰홍 1980</title>
     <style>
-        :root { --bg: #c0c0c0; --panel: #d3d3d3; --accent: #000080; }
-        body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Courier New', monospace; overflow: hidden; }
-        
-        #game-container { position: relative; width: 850px; height: 920px; background: #000; display: flex; border: 10px double #808080; }
-        #game-canvas { width: 66.6%; height: 100%; background: #111; image-rendering: pixelated; border-right: 6px ridge #808080; }
-        
-        #ui-side { width: 33.4%; height: 100%; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; background: var(--panel); }
-        .stat-box { background: #000; color: #00ff00; padding: 15px; border: 3px inset #fff; margin-bottom: 15px; font-size: 18px; }
-        .btn { padding: 12px; background: #c0c0c0; border: 3px outset #fff; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
-        #judge-display { font-size: 32px; font-weight: bold; text-align: center; color: #ff0000; height: 50px; }
-        .key-guide { font-size: 12px; color: #555; margin-top: 10px; text-align: center; }
+        :root {
+            --retro-gold: #ffd700;
+            --retro-pink: #ff69b4;
+            --retro-blue: #00ffff;
+            --retro-bg: #1a0f0f;
+            --terminal-green: #33ff33;
+        }
+
+        body { 
+            background: var(--retro-bg); 
+            color: #fff;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #2c1a1a 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* 가구 느낌의 브라운 프레임 */
+        #game-container { 
+            position: relative; 
+            width: 850px; 
+            height: 900px; 
+            background: #000; 
+            display: flex; 
+            border: 15px solid #3d2424;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 100px #000;
+            border-radius: 25px;
+        }
+
+        #game-canvas { 
+            width: 65%; 
+            height: 100%; 
+            background: #080808; 
+            border-right: 6px double #3d2424;
+            image-rendering: pixelated;
+        }
+
+        #ui-side { 
+            width: 35%; 
+            padding: 35px; 
+            display: flex; 
+            flex-direction: column; 
+            background: linear-gradient(180deg, #2c1a1a 0%, #000 100%);
+            box-sizing: border-box;
+        }
+
+        h1 { 
+            font-size: 26px; 
+            color: var(--retro-pink); 
+            text-align: center; 
+            text-shadow: 3px 3px var(--retro-blue);
+            line-height: 1.2;
+            margin-bottom: 40px;
+        }
+
+        .stat-group { margin-bottom: 25px; }
+        .stat-label { color: var(--retro-blue); font-size: 14px; letter-spacing: 1px; }
+        .stat-value { 
+            font-size: 32px; 
+            color: var(--terminal-green); 
+            text-shadow: 0 0 10px var(--terminal-green);
+            font-weight: bold;
+        }
+
+        .btn-start {
+            padding: 20px;
+            background: var(--retro-pink);
+            color: white;
+            border: 5px outset var(--retro-pink);
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 20px;
+            margin-bottom: 30px;
+            transition: 0.1s;
+        }
+        .btn-start:active { border-style: inset; transform: scale(0.98); }
+
+        #judge-display {
+            font-size: 45px;
+            font-weight: 900;
+            text-align: center;
+            height: 60px;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* CRT 모니터 효과 */
+        .crt-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 65%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 4px;
+            z-index: 5;
+            pointer-events: none;
+            border-radius: 10px 0 0 10px;
+        }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <canvas id="game-canvas" width="560" height="920"></canvas>
+    <div class="crt-overlay"></div>
+    <canvas id="game-canvas" width="550" height="900"></canvas>
     <div id="ui-side">
-        <div style="font-weight:bold; margin-bottom:10px;">MISSION: UNDERCOVER</div>
-        <div class="stat-box">
-            TIME: <span id="timeDisplay">0.00</span>s<br>
-            CASH: $<span id="score">0</span><br>
-            SUSP: <span id="life">0</span>%
+        <h1>UNDERCOVER<br>MISS HONG<br>1980</h1>
+        
+        <button class="btn-start" onclick="startGame()">MISSION START</button>
+
+        <div class="stat-group">
+            <div class="stat-label">RECOVERED CASH</div>
+            <div class="stat-value">₩<span id="score">0</span></div>
         </div>
+
+        <div class="stat-group">
+            <div class="stat-label">SUSPICION</div>
+            <div class="stat-value"><span id="life">0</span>%</div>
+        </div>
+
         <div id="judge-display"></div>
-        <button class="btn" onclick="controlAudio()">START/STOP [SPACE]</button>
-        <div class="key-guide">LANE 1: [S] | LANE 2: [D] | LANE 3: [F]</div>
-        <div style="margin-top:auto; font-size:10px;">(C) 1996 UNDERCOVER PROJECT</div>
+
+        <div style="margin-top: auto; font-size: 12px; color: #777; line-height: 1.6; border: 1px dashed #444; padding: 10px;">
+            <b style="color:var(--retro-gold)">[OPERATIVE MANUAL]</b><br>
+            - Use Keys [1, 2, 3] to capture bills.<br>
+            - <span style="color:var(--retro-pink)">REAL:</span> +10,000 KRW<br>
+            - <span style="color:#ff4444;">FAKE:</span> +20% SUSPICION
+        </div>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
-    const audio = new Audio('dance_tonight.mp3');
+    const audio = new Audio('dance_tonight.mp3'); 
     
-    // --- 이미지 로드 (회장님 지폐) ---
-    const fakeImg = new Image();
-    fakeImg.src = 'image_30bba7.png'; // 업로드하신 이미지 파일명으로 설정
-
-    let score = 0; let life = 0;
+    let isPlaying = false;
+    let score = 0, life = 0;
+    let characterState = 'IDLE'; 
     const LANE_COUNT = 3;
     const LANE_WIDTH = canvas.width / LANE_COUNT;
-    const JUDGE_LINE_Y = 780;
 
-    // 키 눌림 상태 시각화용
-    let keyEffect = [false, false, false];
+    // 전달해주신 장부 데이터 (15% 확률로 FAKE 자동 변환)
+    const masterNotes = [{"time":6900,"lane":1,"type":"REAL","hit":false},{"time":7260,"lane":1,"type":"REAL","hit":false},{"time":8612,"lane":2,"type":"REAL","hit":false},{"time":8855,"lane":2,"type":"REAL","hit":false},{"time":9271,"lane":3,"type":"REAL","hit":false},{"time":10532,"lane":1,"type":"REAL","hit":false},{"time":10841,"lane":1,"type":"REAL","hit":false},{"time":11448,"lane":2,"type":"REAL","hit":false},{"time":11763,"lane":3,"type":"REAL","hit":false},{"time":12018,"lane":2,"type":"REAL","hit":false},{"time":12502,"lane":1,"type":"REAL","hit":false},{"time":12879,"lane":1,"type":"REAL","hit":false},{"time":13782,"lane":2,"type":"REAL","hit":false},{"time":14275,"lane":2,"type":"REAL","hit":false},{"time":14547,"lane":3,"type":"REAL","hit":false},{"time":14913,"lane":2,"type":"REAL","hit":false},{"time":15541,"lane":1,"type":"REAL","hit":false},{"time":15906,"lane":2,"type":"REAL","hit":false},{"time":16318,"lane":3,"type":"REAL","hit":false},{"time":16646,"lane":2,"type":"REAL","hit":false},{"time":16969,"lane":2,"type":"REAL","hit":false},{"time":17785,"lane":1,"type":"REAL","hit":false},{"time":18050,"lane":2,"type":"REAL","hit":false},{"time":18368,"lane":3,"type":"REAL","hit":false},{"time":18590,"lane":2,"type":"REAL","hit":false},{"time":19102,"lane":2,"type":"REAL","hit":false},{"time":19610,"lane":1,"type":"REAL","hit":false},{"time":20005,"lane":2,"type":"REAL","hit":false},{"time":20364,"lane":3,"type":"REAL","hit":false},{"time":20557,"lane":2,"type":"REAL","hit":false},{"time":20956,"lane":2,"type":"REAL","hit":false},{"time":21869,"lane":1,"type":"REAL","hit":false},{"time":22117,"lane":2,"type":"REAL","hit":false},{"time":22606,"lane":3,"type":"REAL","hit":false},{"time":23198,"lane":3,"type":"REAL","hit":false},{"time":23673,"lane":2,"type":"REAL","hit":false},{"time":23948,"lane":1,"type":"REAL","hit":false},{"time":24159,"lane":2,"type":"REAL","hit":false},{"time":24415,"lane":3,"type":"REAL","hit":false},{"time":24612,"lane":2,"type":"REAL","hit":false},{"time":24970,"lane":2,"type":"REAL","hit":false},{"time":25112,"lane":2,"type":"REAL","hit":false},{"time":25420,"lane":1,"type":"REAL","hit":false},{"time":25680,"lane":2,"type":"REAL","hit":false},{"time":26147,"lane":3,"type":"REAL","hit":false},{"time":26876,"lane":2,"type":"REAL","hit":false},{"time":27642,"lane":1,"type":"REAL","hit":false},{"time":27917,"lane":2,"type":"REAL","hit":false},{"time":28156,"lane":3,"type":"REAL","hit":false},{"time":28654,"lane":2,"type":"REAL","hit":false},{"time":29012,"lane":2,"type":"REAL","hit":false},{"time":29513,"lane":3,"type":"REAL","hit":false},{"time":29721,"lane":2,"type":"REAL","hit":false},{"time":30201,"lane":1,"type":"REAL","hit":false},{"time":30880,"lane":2,"type":"REAL","hit":false},{"time":31471,"lane":3,"type":"REAL","hit":false},{"time":31708,"lane":1,"type":"REAL","hit":false},{"time":31919,"lane":2,"type":"REAL","hit":false},{"time":32195,"lane":3,"type":"REAL","hit":false},{"time":32695,"lane":2,"type":"REAL","hit":false},{"time":33252,"lane":2,"type":"REAL","hit":false},{"time":33701,"lane":1,"type":"REAL","hit":false},{"time":34197,"lane":1,"type":"REAL","hit":false},{"time":34772,"lane":3,"type":"REAL","hit":false},{"time":35209,"lane":3,"type":"REAL","hit":false},{"time":35731,"lane":2,"type":"REAL","hit":false},{"time":36210,"lane":2,"type":"REAL","hit":false},{"time":36732,"lane":1,"type":"REAL","hit":false},{"time":37177,"lane":1,"type":"REAL","hit":false},{"time":37732,"lane":2,"type":"REAL","hit":false},{"time":38231,"lane":3,"type":"REAL","hit":false},{"time":38750,"lane":1,"type":"REAL","hit":false},{"time":39120,"lane":1,"type":"REAL","hit":false},{"time":39543,"lane":2,"type":"REAL","hit":false},{"time":39789,"lane":3,"type":"REAL","hit":false},{"time":40023,"lane":2,"type":"REAL","hit":false},{"time":40252,"lane":1,"type":"REAL","hit":false},{"time":40735,"lane":2,"type":"REAL","hit":false},{"time":41118,"lane":2,"type":"REAL","hit":false},{"time":41550,"lane":3,"type":"REAL","hit":false},{"time":41774,"lane":2,"type":"REAL","hit":false},{"time":42165,"lane":1,"type":"REAL","hit":false},{"time":42539,"lane":2,"type":"REAL","hit":false},{"time":42849,"lane":3,"type":"REAL","hit":false},{"time":43166,"lane":2,"type":"REAL","hit":false},{"time":43791,"lane":2,"type":"REAL","hit":false},{"time":44171,"lane":3,"type":"REAL","hit":false},{"time":44617,"lane":1,"type":"REAL","hit":false},{"time":44790,"lane":2,"type":"REAL","hit":false},{"time":45207,"lane":2,"type":"REAL","hit":false},{"time":45780,"lane":3,"type":"REAL","hit":false},{"time":46251,"lane":3,"type":"REAL","hit":false},{"time":46812,"lane":1,"type":"REAL","hit":false},{"time":47170,"lane":1,"type":"REAL","hit":false},{"time":47802,"lane":2,"type":"REAL","hit":false},{"time":48286,"lane":2,"type":"REAL","hit":false},{"time":48830,"lane":3,"type":"REAL","hit":false},{"time":50158,"lane":1,"type":"REAL","hit":false},{"time":50568,"lane":1,"type":"REAL","hit":false},{"time":51132,"lane":2,"type":"REAL","hit":false},{"time":51377,"lane":2,"type":"REAL","hit":false},{"time":51625,"lane":3,"type":"REAL","hit":false},{"time":51876,"lane":2,"type":"REAL","hit":false},{"time":52324,"lane":1,"type":"REAL","hit":false},{"time":52644,"lane":2,"type":"REAL","hit":false},{"time":52873,"lane":3,"type":"REAL","hit":false},{"time":53220,"lane":2,"type":"REAL","hit":false},{"time":54102,"lane":2,"type":"REAL","hit":false},{"time":54587,"lane":2,"type":"REAL","hit":false},{"time":54870,"lane":3,"type":"REAL","hit":false},{"time":55171,"lane":2,"type":"REAL","hit":false},{"time":55274,"lane":3,"type":"REAL","hit":false},{"time":55608,"lane":1,"type":"REAL","hit":false},{"time":55890,"lane":3,"type":"REAL","hit":false},{"time":56411,"lane":2,"type":"REAL","hit":false},{"time":56658,"lane":1,"type":"REAL","hit":false},{"time":56904,"lane":2,"type":"REAL","hit":false},{"time":57240,"lane":2,"type":"REAL","hit":false},{"time":58124,"lane":2,"type":"REAL","hit":false},{"time":58626,"lane":2,"type":"REAL","hit":false},{"time":58905,"lane":3,"type":"REAL","hit":false},{"time":59121,"lane":2,"type":"REAL","hit":false},{"time":59822,"lane":1,"type":"REAL","hit":false},{"time":60418,"lane":2,"type":"REAL","hit":false},{"time":60698,"lane":3,"type":"REAL","hit":false},{"time":60940,"lane":2,"type":"REAL","hit":false},{"time":61648,"lane":1,"type":"REAL","hit":false},{"time":62631,"lane":1,"type":"REAL","hit":false},{"time":63710,"lane":1,"type":"REAL","hit":false},{"time":64732,"lane":2,"type":"REAL","hit":false},{"time":64964,"lane":3,"type":"REAL","hit":false},{"time":66721,"lane":3,"type":"REAL","hit":false},{"time":67242,"lane":2,"type":"REAL","hit":false},{"time":67438,"lane":1,"type":"REAL","hit":false},{"time":67734,"lane":2,"type":"REAL","hit":false},{"time":68016,"lane":3,"type":"REAL","hit":false},{"time":68495,"lane":1,"type":"REAL","hit":false},{"time":68815,"lane":2,"type":"REAL","hit":false},{"time":69444,"lane":3,"type":"REAL","hit":false},{"time":70387,"lane":2,"type":"REAL","hit":false},{"time":70757,"lane":2,"type":"REAL","hit":false},{"time":71078,"lane":2,"type":"REAL","hit":false},{"time":71749,"lane":3,"type":"REAL","hit":false},{"time":72077,"lane":1,"type":"REAL","hit":false},{"time":72501,"lane":2,"type":"REAL","hit":false},{"time":72790,"lane":3,"type":"REAL","hit":false},{"time":73058,"lane":2,"type":"REAL","hit":false},{"time":73543,"lane":1,"type":"REAL","hit":false},{"time":73804,"lane":2,"type":"REAL","hit":false},{"time":74100,"lane":3,"type":"REAL","hit":false},{"time":74368,"lane":2,"type":"REAL","hit":false},{"time":74589,"lane":1,"type":"REAL","hit":false},{"time":74788,"lane":2,"type":"REAL","hit":false},{"time":75127,"lane":3,"type":"REAL","hit":false},{"time":75557,"lane":2,"type":"REAL","hit":false},{"time":75810,"lane":2,"type":"REAL","hit":false},{"time":76551,"lane":1,"type":"REAL","hit":false},{"time":76810,"lane":2,"type":"REAL","hit":false},{"time":77615,"lane":2,"type":"REAL","hit":false},{"time":77893,"lane":3,"type":"REAL","hit":false},{"time":78554,"lane":1,"type":"REAL","hit":false},{"time":78841,"lane":2,"type":"REAL","hit":false},{"time":79132,"lane":3,"type":"REAL","hit":false},{"time":79542,"lane":2,"type":"REAL","hit":false},{"time":79830,"lane":2,"type":"REAL","hit":false},{"time":80666,"lane":3,"type":"REAL","hit":false},{"time":80889,"lane":2,"type":"REAL","hit":false},{"time":81141,"lane":1,"type":"REAL","hit":false},{"time":81582,"lane":2,"type":"REAL","hit":false},{"time":82178,"lane":3,"type":"REAL","hit":false},{"time":82607,"lane":2,"type":"REAL","hit":false},{"time":83417,"lane":1,"type":"REAL","hit":false},{"time":84192,"lane":1,"type":"REAL","hit":false},{"time":84392,"lane":1,"type":"REAL","hit":false},{"time":84712,"lane":1,"type":"REAL","hit":false},{"time":84895,"lane":1,"type":"REAL","hit":false},{"time":85168,"lane":1,"type":"REAL","hit":false},{"time":85502,"lane":2,"type":"REAL","hit":false},{"time":86345,"lane":2,"type":"REAL","hit":false},{"time":86895,"lane":2,"type":"REAL","hit":false},{"time":87137,"lane":2,"type":"REAL","hit":false},{"time":87522,"lane":3,"type":"REAL","hit":false},{"time":88218,"lane":1,"type":"REAL","hit":false},{"time":88433,"lane":2,"type":"REAL","hit":false},{"time":88658,"lane":3,"type":"REAL","hit":false},{"time":88934,"lane":2,"type":"REAL","hit":false},{"time":89103,"lane":1,"type":"REAL","hit":false},{"time":89427,"lane":2,"type":"REAL","hit":false},{"time":90696,"lane":3,"type":"REAL","hit":false},{"time":90954,"lane":2,"type":"REAL","hit":false},{"time":91112,"lane":1,"type":"REAL","hit":false},{"time":92672,"lane":2,"type":"REAL","hit":false},{"time":93000,"lane":3,"type":"REAL","hit":false},{"time":93097,"lane":2,"type":"REAL","hit":false},{"time":93520,"lane":1,"type":"REAL","hit":false},{"time":94691,"lane":2,"type":"REAL","hit":false},{"time":94948,"lane":1,"type":"REAL","hit":false},{"time":95049,"lane":2,"type":"REAL","hit":false},{"time":96523,"lane":3,"type":"REAL","hit":false},{"time":96737,"lane":2,"type":"REAL","hit":false},{"time":97005,"lane":1,"type":"REAL","hit":false},{"time":97159,"lane":3,"type":"REAL","hit":false},{"time":97532,"lane":2,"type":"REAL","hit":false},{"time":98543,"lane":3,"type":"REAL","hit":false},{"time":98787,"lane":2,"type":"REAL","hit":false},{"time":99010,"lane":1,"type":"REAL","hit":false},{"time":99137,"lane":2,"type":"REAL","hit":false},{"time":100514,"lane":3,"type":"REAL","hit":false},{"time":101217,"lane":3,"type":"REAL","hit":false},{"time":101689,"lane":2,"type":"REAL","hit":false},{"time":102203,"lane":1,"type":"REAL","hit":false},{"time":102771,"lane":2,"type":"REAL","hit":false},{"time":103037,"lane":3,"type":"REAL","hit":false},{"time":103262,"lane":2,"type":"REAL","hit":false},{"time":103631,"lane":2,"type":"REAL","hit":false},{"time":104304,"lane":1,"type":"REAL","hit":false},{"time":104758,"lane":2,"type":"REAL","hit":false},{"time":105065,"lane":3,"type":"REAL","hit":false},{"time":105320,"lane":2,"type":"REAL","hit":false},{"time":105761,"lane":2,"type":"REAL","hit":false},{"time":106282,"lane":1,"type":"REAL","hit":false},{"time":106707,"lane":1,"type":"REAL","hit":false},{"time":107069,"lane":2,"type":"REAL","hit":false},{"time":107393,"lane":3,"type":"REAL","hit":false},{"time":107766,"lane":2,"type":"REAL","hit":false},{"time":108329,"lane":1,"type":"REAL","hit":false},{"time":108711,"lane":1,"type":"REAL","hit":false},{"time":109103,"lane":2,"type":"REAL","hit":false},{"time":109399,"lane":3,"type":"REAL","hit":false},{"time":109735,"lane":2,"type":"REAL","hit":false},{"time":110302,"lane":2,"type":"REAL","hit":false},{"time":110885,"lane":1,"type":"REAL","hit":false},{"time":111337,"lane":2,"type":"REAL","hit":false},{"time":111658,"lane":2,"type":"REAL","hit":false},{"time":112145,"lane":3,"type":"REAL","hit":false},{"time":112301,"lane":2,"type":"REAL","hit":false},{"time":112672,"lane":1,"type":"REAL","hit":false},{"time":112859,"lane":2,"type":"REAL","hit":false},{"time":113399,"lane":3,"type":"REAL","hit":false},{"time":113813,"lane":3,"type":"REAL","hit":false},{"time":114238,"lane":1,"type":"REAL","hit":false},{"time":114726,"lane":3,"type":"REAL","hit":false},{"time":115083,"lane":2,"type":"REAL","hit":false},{"time":115308,"lane":1,"type":"REAL","hit":false},{"time":115747,"lane":2,"type":"REAL","hit":false},{"time":116194,"lane":3,"type":"REAL","hit":false},{"time":116364,"lane":2,"type":"REAL","hit":false},{"time":116757,"lane":2,"type":"REAL","hit":false},{"time":117118,"lane":1,"type":"REAL","hit":false},{"time":117327,"lane":2,"type":"REAL","hit":false},{"time":117795,"lane":2,"type":"REAL","hit":false},{"time":118884,"lane":3,"type":"REAL","hit":false},{"time":119318,"lane":2,"type":"REAL","hit":false},{"time":119720,"lane":2,"type":"REAL","hit":false},{"time":120231,"lane":1,"type":"REAL","hit":false},{"time":120417,"lane":2,"type":"REAL","hit":false},{"time":120946,"lane":3,"type":"REAL","hit":false},{"time":121417,"lane":1,"type":"REAL","hit":false},{"time":122642,"lane":1,"type":"REAL","hit":false},{"time":123111,"lane":1,"type":"REAL","hit":false},{"time":123678,"lane":3,"type":"REAL","hit":false},{"time":123913,"lane":2,"type":"REAL","hit":false},{"time":124191,"lane":2,"type":"REAL","hit":false},{"time":124463,"lane":1,"type":"REAL","hit":false},{"time":124895,"lane":2,"type":"REAL","hit":false},{"time":125211,"lane":3,"type":"REAL","hit":false},{"time":125432,"lane":2,"type":"REAL","hit":false},{"time":125792,"lane":2,"type":"REAL","hit":false},{"time":126700,"lane":1,"type":"REAL","hit":false},{"time":127211,"lane":1,"type":"REAL","hit":false},{"time":127508,"lane":1,"type":"REAL","hit":false},{"time":127753,"lane":2,"type":"REAL","hit":false},{"time":127927,"lane":3,"type":"REAL","hit":false},{"time":128241,"lane":2,"type":"REAL","hit":false},{"time":128471,"lane":1,"type":"REAL","hit":false},{"time":128962,"lane":2,"type":"REAL","hit":false},{"time":129289,"lane":3,"type":"REAL","hit":false},{"time":129495,"lane":2,"type":"REAL","hit":false},{"time":129815,"lane":2,"type":"REAL","hit":false},{"time":130761,"lane":2,"type":"REAL","hit":false},{"time":131185,"lane":2,"type":"REAL","hit":false},{"time":131490,"lane":3,"type":"REAL","hit":false},{"time":131764,"lane":2,"type":"REAL","hit":false},{"time":131909,"lane":1,"type":"REAL","hit":false},{"time":132457,"lane":2,"type":"REAL","hit":false},{"time":133033,"lane":3,"type":"REAL","hit":false},{"time":133249,"lane":2,"type":"REAL","hit":false},{"time":134237,"lane":2,"type":"REAL","hit":false},{"time":135276,"lane":2,"type":"REAL","hit":false},{"time":136309,"lane":2,"type":"REAL","hit":false},{"time":137205,"lane":3,"type":"REAL","hit":false},{"time":137344,"lane":2,"type":"REAL","hit":false},{"time":137574,"lane":1,"type":"REAL","hit":false},{"time":138875,"lane":2,"type":"REAL","hit":false},{"time":139305,"lane":2,"type":"REAL","hit":false},{"time":139854,"lane":1,"type":"REAL","hit":false},{"time":140086,"lane":2,"type":"REAL","hit":false},{"time":140373,"lane":3,"type":"REAL","hit":false},{"time":140597,"lane":2,"type":"REAL","hit":false},{"time":141075,"lane":1,"type":"REAL","hit":false},{"time":141329,"lane":2,"type":"REAL","hit":false},{"time":141679,"lane":3,"type":"REAL","hit":false},{"time":142740,"lane":2,"type":"REAL","hit":false},{"time":143310,"lane":2,"type":"REAL","hit":false},{"time":143644,"lane":1,"type":"REAL","hit":false},{"time":143872,"lane":2,"type":"REAL","hit":false},{"time":144027,"lane":3,"type":"REAL","hit":false},{"time":144346,"lane":2,"type":"REAL","hit":false},{"time":144658,"lane":1,"type":"REAL","hit":false},{"time":145117,"lane":2,"type":"REAL","hit":false},{"time":145441,"lane":3,"type":"REAL","hit":false},{"time":145624,"lane":2,"type":"REAL","hit":false},{"time":146038,"lane":2,"type":"REAL","hit":false},{"time":147096,"lane":2,"type":"REAL","hit":false},{"time":147355,"lane":1,"type":"REAL","hit":false},{"time":147899,"lane":2,"type":"REAL","hit":false},{"time":149150,"lane":1,"type":"REAL","hit":false},{"time":149398,"lane":1,"type":"REAL","hit":false},{"time":150185,"lane":3,"type":"REAL","hit":false},{"time":150399,"lane":2,"type":"REAL","hit":false},{"time":151140,"lane":1,"type":"REAL","hit":false},{"time":151423,"lane":2,"type":"REAL","hit":false},{"time":151660,"lane":2,"type":"REAL","hit":false},{"time":152138,"lane":2,"type":"REAL","hit":false},{"time":152739,"lane":2,"type":"REAL","hit":false},{"time":153207,"lane":2,"type":"REAL","hit":false},{"time":153461,"lane":1,"type":"REAL","hit":false},{"time":153701,"lane":2,"type":"REAL","hit":false},{"time":154203,"lane":2,"type":"REAL","hit":false},{"time":154735,"lane":2,"type":"REAL","hit":false},{"time":155199,"lane":2,"type":"REAL","hit":false},{"time":155733,"lane":2,"type":"REAL","hit":false},{"time":156004,"lane":2,"type":"REAL","hit":false},{"time":156214,"lane":3,"type":"REAL","hit":false},{"time":156482,"lane":1,"type":"REAL","hit":false},{"time":156781,"lane":2,"type":"REAL","hit":false},{"time":157208,"lane":2,"type":"REAL","hit":false},{"time":157501,"lane":1,"type":"REAL","hit":false},{"time":157821,"lane":2,"type":"REAL","hit":false},{"time":158135,"lane":2,"type":"REAL","hit":false},{"time":158782,"lane":3,"type":"REAL","hit":false},{"time":159229,"lane":3,"type":"REAL","hit":false},{"time":159685,"lane":1,"type":"REAL","hit":false},{"time":159983,"lane":2,"type":"REAL","hit":false},{"time":160272,"lane":3,"type":"REAL","hit":false},{"time":160497,"lane":2,"type":"REAL","hit":false},{"time":160779,"lane":1,"type":"REAL","hit":false},{"time":161198,"lane":2,"type":"REAL","hit":false},{"time":161469,"lane":2,"type":"REAL","hit":false},{"time":161784,"lane":1,"type":"REAL","hit":false},{"time":162145,"lane":2,"type":"REAL","hit":false},{"time":162758,"lane":3,"type":"REAL","hit":false},{"time":163271,"lane":3,"type":"REAL","hit":false},{"time":163620,"lane":2,"type":"REAL","hit":false},{"time":163847,"lane":1,"type":"REAL","hit":false},{"time":164067,"lane":2,"type":"REAL","hit":false},{"time":164315,"lane":3,"type":"REAL","hit":false},{"time":164515,"lane":2,"type":"REAL","hit":false},{"time":164798,"lane":1,"type":"REAL","hit":false},{"time":165066,"lane":2,"type":"REAL","hit":false},{"time":165343,"lane":3,"type":"REAL","hit":false},{"time":165522,"lane":2,"type":"REAL","hit":false},{"time":165863,"lane":2,"type":"REAL","hit":false},{"time":166144,"lane":2,"type":"REAL","hit":false},{"time":166634,"lane":1,"type":"REAL","hit":false},{"time":167240,"lane":2,"type":"REAL","hit":false},{"time":167597,"lane":2,"type":"REAL","hit":false},{"time":167831,"lane":1,"type":"REAL","hit":false},{"time":168027,"lane":2,"type":"REAL","hit":false},{"time":168365,"lane":3,"type":"REAL","hit":false},{"time":168546,"lane":2,"type":"REAL","hit":false},{"time":168877,"lane":2,"type":"REAL","hit":false},{"time":169076,"lane":2,"type":"REAL","hit":false},{"time":169333,"lane":3,"type":"REAL","hit":false},{"time":169594,"lane":2,"type":"REAL","hit":false},{"time":169837,"lane":1,"type":"REAL","hit":false},{"time":171068,"lane":1,"type":"REAL","hit":false},{"time":171566,"lane":1,"type":"REAL","hit":false},{"time":172135,"lane":3,"type":"REAL","hit":false},{"time":172409,"lane":2,"type":"REAL","hit":false},{"time":172657,"lane":1,"type":"REAL","hit":false},{"time":172867,"lane":2,"type":"REAL","hit":false},{"time":173371,"lane":3,"type":"REAL","hit":false},{"time":173621,"lane":2,"type":"REAL","hit":false},{"time":173895,"lane":2,"type":"REAL","hit":false},{"time":174221,"lane":2,"type":"REAL","hit":false},{"time":175084,"lane":2,"type":"REAL","hit":false},{"time":175613,"lane":2,"type":"REAL","hit":false},{"time":175882,"lane":1,"type":"REAL","hit":false},{"time":176119,"lane":2,"type":"REAL","hit":false},{"time":176285,"lane":3,"type":"REAL","hit":false},{"time":176594,"lane":2,"type":"REAL","hit":false},{"time":176877,"lane":1,"type":"REAL","hit":false},{"time":177360,"lane":2,"type":"REAL","hit":false},{"time":177609,"lane":2,"type":"REAL","hit":false},{"time":177911,"lane":1,"type":"REAL","hit":false},{"time":178270,"lane":2,"type":"REAL","hit":false},{"time":179175,"lane":2,"type":"REAL","hit":false},{"time":179623,"lane":2,"type":"REAL","hit":false},{"time":179942,"lane":1,"type":"REAL","hit":false},{"time":180196,"lane":2,"type":"REAL","hit":false},{"time":180489,"lane":3,"type":"REAL","hit":false},{"time":180681,"lane":2,"type":"REAL","hit":false},{"time":180953,"lane":1,"type":"REAL","hit":false},{"time":181173,"lane":2,"type":"REAL","hit":false},{"time":181464,"lane":3,"type":"REAL","hit":false},{"time":181679,"lane":2,"type":"REAL","hit":false},{"time":182499,"lane":2,"type":"REAL","hit":false},{"time":182725,"lane":1,"type":"REAL","hit":false},{"time":183423,"lane":1,"type":"REAL","hit":false},{"time":183653,"lane":2,"type":"REAL","hit":false},{"time":184017,"lane":3,"type":"REAL","hit":false},{"time":184339,"lane":2,"type":"REAL","hit":false},{"time":184689,"lane":2,"type":"REAL","hit":false},{"time":185401,"lane":2,"type":"REAL","hit":false},{"time":185642,"lane":1,"type":"REAL","hit":false},{"time":185862,"lane":2,"type":"REAL","hit":false},{"time":186110,"lane":2,"type":"REAL","hit":false},{"time":186479,"lane":2,"type":"REAL","hit":false},{"time":187014,"lane":2,"type":"REAL","hit":false},{"time":187473,"lane":2,"type":"REAL","hit":false},{"time":187982,"lane":1,"type":"REAL","hit":false},{"time":188234,"lane":2,"type":"REAL","hit":false},{"time":188533,"lane":3,"type":"REAL","hit":false},{"time":188791,"lane":1,"type":"REAL","hit":false},{"time":189031,"lane":1,"type":"REAL","hit":false},{"time":189533,"lane":2,"type":"REAL","hit":false},{"time":189807,"lane":1,"type":"REAL","hit":false},{"time":190477,"lane":1,"type":"REAL","hit":false},{"time":191041,"lane":2,"type":"REAL","hit":false},{"time":191760,"lane":3,"type":"REAL","hit":false},{"time":192237,"lane":2,"type":"REAL","hit":false},{"time":192494,"lane":1,"type":"REAL","hit":false},{"time":192756,"lane":2,"type":"REAL","hit":false},{"time":193028,"lane":1,"type":"REAL","hit":false},{"time":193502,"lane":2,"type":"REAL","hit":false},{"time":193730,"lane":1,"type":"REAL","hit":false},{"time":194004,"lane":2,"type":"REAL","hit":false},{"time":194408,"lane":3,"type":"REAL","hit":false},{"time":195288,"lane":2,"type":"REAL","hit":false},{"time":195734,"lane":2,"type":"REAL","hit":false},{"time":196316,"lane":3,"type":"REAL","hit":false},{"time":196518,"lane":2,"type":"REAL","hit":false},{"time":196789,"lane":1,"type":"REAL","hit":false},{"time":197034,"lane":2,"type":"REAL","hit":false},{"time":197346,"lane":3,"type":"REAL","hit":false},{"time":197560,"lane":1,"type":"REAL","hit":false},{"time":197800,"lane":2,"type":"REAL","hit":false},{"time":198098,"lane":2,"type":"REAL","hit":false},{"time":198391,"lane":2,"type":"REAL","hit":false},{"time":199300,"lane":1,"type":"REAL","hit":false},{"time":199783,"lane":1,"type":"REAL","hit":false},{"time":200060,"lane":2,"type":"REAL","hit":false},{"time":200341,"lane":3,"type":"REAL","hit":false},{"time":200553,"lane":2,"type":"REAL","hit":false},{"time":200838,"lane":1,"type":"REAL","hit":false},{"time":201188,"lane":2,"type":"REAL","hit":false},{"time":201385,"lane":3,"type":"REAL","hit":false},{"time":201651,"lane":1,"type":"REAL","hit":false},{"time":201855,"lane":2,"type":"REAL","hit":false},{"time":202148,"lane":2,"type":"REAL","hit":false}];
+    let currentNotes = [];
 
-    // 노트 데이터
-    let rawNotes = [{"time":601,"lane":1},{"time":892,"lane":1},{"time":2456,"lane":1},{"time":2775,"lane":1},{"time":3446,"lane":2},{"time":3705,"lane":3},{"time":3892,"lane":1},{"time":4481,"lane":2},{"time":4814,"lane":2},{"time":6508,"lane":3},{"time":6814,"lane":3},{"time":8477,"lane":1},{"time":8855,"lane":1},{"time":9329,"lane":2},{"time":9648,"lane":2},{"time":10502,"lane":3},{"time":10867,"lane":3},{"time":12518,"lane":1},{"time":12930,"lane":2},{"time":14529,"lane":1},{"time":14869,"lane":2},{"time":15291,"lane":1},{"time":15891,"lane":1},{"time":16279,"lane":1},{"time":17559,"lane":1},{"time":17714,"lane":2},{"time":18004,"lane":3},{"time":19586,"lane":1},{"time":19969,"lane":1},{"time":20304,"lane":2},{"time":21594,"lane":3},{"time":21806,"lane":2},{"time":22087,"lane":1},{"time":23886,"lane":1},{"time":24109,"lane":2},{"time":24372,"lane":3}];
-    
-    let notes = rawNotes.map(n => ({
-        ...n,
-        type: Math.random() < 0.2 ? 'FAKE' : 'REAL',
-        hit: false
-    }));
-
-    function drawNote(note, y) {
-        const x = (note.lane - 1) * LANE_WIDTH + (LANE_WIDTH / 2);
-        const w = 120; const h = 60;
-
-        if (note.type === 'FAKE' && fakeImg.complete) {
-            // 회장님 지폐 이미지 그리기
-            ctx.drawImage(fakeImg, x - w/2, y - h/2, w, h);
-            // 레트로한 테두리 추가
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
-            ctx.strokeRect(x - w/2, y - h/2, w, h);
-        } else {
-            // 일반 지폐 (초록색 도트)
-            ctx.fillStyle = "#2e7d32";
-            ctx.fillRect(x - w/2, y - h/2, w, h);
-            ctx.strokeStyle = "#fff"; ctx.strokeRect(x - w/2, y - h/2, w, h);
-            ctx.fillStyle = "#fff"; ctx.font = "20px monospace";
-            ctx.textAlign = "center"; ctx.fillText("₩", x, y + 7);
-        }
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const currentTime = audio.currentTime * 1000;
-        document.getElementById('timeDisplay').innerText = audio.currentTime.toFixed(2);
-
-        // 레인 & 키 효과
-        for(let i=0; i<LANE_COUNT; i++) {
-            ctx.fillStyle = keyEffect[i] ? "#333" : "#111";
-            ctx.fillRect(i*LANE_WIDTH, 0, LANE_WIDTH, canvas.height);
-        }
-
-        // 판정선
-        ctx.fillStyle = "#00ff00";
-        ctx.fillRect(0, JUDGE_LINE_Y, canvas.width, 5);
-
-        // 노트
-        notes.forEach(note => {
-            if (note.hit) return;
-            const y = JUDGE_LINE_Y - (note.time - currentTime) * 0.75;
-            if (y > -50 && y < 950) drawNote(note, y);
-            
-            // 놓친 노트 처리 (Miss)
-            if (y > JUDGE_LINE_Y + 50 && !note.hit) {
-                note.hit = true;
-                if(note.type === 'REAL') {
-                   document.getElementById('judge-display').innerText = "MISS";
-                }
-            }
+    function startGame() {
+        score = 0; life = 0; isPlaying = true;
+        // 깊은 복사 후 무작위 FAKE(회장님) 생성
+        currentNotes = JSON.parse(JSON.stringify(masterNotes)).map(n => {
+            if(Math.random() < 0.15) n.type = 'FAKE';
+            return n;
         });
-
-        requestAnimationFrame(draw);
+        audio.currentTime = 0;
+        audio.play();
+        updateUI();
     }
 
-    // 판정 함수
-    function checkHit(lane) {
-        if (audio.paused) return;
-        const currentTime = audio.currentTime * 1000;
-        
-        for (let note of notes) {
-            if (note.hit || note.lane !== lane) continue;
-            const noteY = JUDGE_LINE_Y - (note.time - currentTime) * 0.75;
-            
-            if (Math.abs(noteY - JUDGE_LINE_Y) < 60) {
-                note.hit = true;
-                if (note.type === 'REAL') {
-                    score += 100;
-                    document.getElementById('judge-display').innerText = "PERFECT!";
-                } else {
-                    life += 15; // Fake 노트를 누르면 의심도 대폭 상승
-                    document.getElementById('judge-display').innerText = "BUSTED!!";
-                }
-                document.getElementById('score').innerText = score;
-                document.getElementById('life').innerText = life;
-                break; 
+    window.addEventListener('keydown', (e) => {
+        if (!isPlaying) return;
+        let lane = ['1','2','3'].indexOf(e.key) + 1;
+        if (lane > 0) checkHit(audio.currentTime * 1000, lane);
+    });
+
+    function checkHit(curT, lane) {
+        const hitNote = currentNotes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - curT) < 150);
+        if (hitNote) {
+            hitNote.hit = true;
+            if (hitNote.type === 'REAL') {
+                score += 10000; showJudge("SUCCESS", "#00ffff"); characterState = 'HIT';
+            } else {
+                life += 20; showJudge("DANGER!", "#ff0000"); characterState = 'PANIC';
             }
+            updateUI();
+            setTimeout(() => characterState = 'IDLE', 500);
         }
     }
 
-    // 입력 이벤트
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') { controlAudio(); e.preventDefault(); }
-        if (e.key === 's' || e.key === 'S') { keyEffect[0] = true; checkHit(1); }
-        if (e.key === 'd' || e.key === 'D') { keyEffect[1] = true; checkHit(2); }
-        if (e.key === 'f' || e.key === 'F') { keyEffect[2] = true; checkHit(3); }
-    });
+    function showJudge(txt, color) {
+        const d = document.getElementById('judge-display');
+        d.innerText = txt; d.style.color = color;
+        setTimeout(() => { if(d.innerText === txt) d.innerText = ""; }, 500);
+    }
 
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 's' || e.key === 'S') keyEffect[0] = false;
-        if (e.key === 'd' || e.key === 'D') keyEffect[1] = false;
-        if (e.key === 'f' || e.key === 'F') keyEffect[2] = false;
-    });
+    function updateUI() {
+        document.getElementById('score').innerText = score.toLocaleString();
+        document.getElementById('life').innerText = life;
+        if(life >= 100) {
+            isPlaying = false;
+            audio.pause();
+            alert("정체가 탄로 났습니다! 작전 실패.");
+        }
+    }
 
-    function controlAudio() { audio.paused ? audio.play() : audio.pause(); }
+    // --- 강화된 픽셀 아트 렌더링 ---
 
-    draw();
+    function drawCharacter() {
+        const x = canvas.width / 2, y = 780;
+        ctx.save(); ctx.translate(x, y);
+
+        if (characterState !== 'HIT' && characterState !== 'PANIC') {
+            // [홍장미] 웨이브 단발 + 별핀 + 초롱초롱 눈
+            ctx.fillStyle = "#2d1a10"; ctx.fillRect(-40, -65, 80, 50); // 머리
+            ctx.fillRect(-45, -35, 20, 30); ctx.fillRect(25, -35, 20, 30); // 웨이브
+            ctx.fillStyle = "#ff69b4"; ctx.fillRect(-30, -58, 14, 14); // 별핀
+            ctx.fillStyle = "#ffe0bd"; ctx.fillRect(-35, -30, 70, 40); // 얼굴
+            ctx.fillStyle = "#fff"; ctx.fillRect(-22, -18, 12, 10); ctx.fillRect(10, -18, 12, 10); // 눈
+            ctx.fillStyle = "#000"; ctx.fillRect(-17, -15, 5, 5); ctx.fillRect(15, -15, 5, 5); // 눈동자
+            ctx.fillStyle = "pink"; ctx.fillRect(-40, 10, 80, 45); // 셔츠
+            ctx.fillStyle = "#fff"; ctx.fillRect(-25, 10, 8, 45); ctx.fillRect(17, 10, 8, 45); // 가방끈
+        } else {
+            // [미쓰홍] 긴 생머리 + 선글라스 + 네이비 정장
+            ctx.fillStyle = "#000"; ctx.fillRect(-40, -70, 80, 120); // 긴머리
+            ctx.fillStyle = "#ffe0bd"; ctx.fillRect(-35, -35, 70, 40); // 얼굴
+            ctx.fillStyle = "#ffd700"; ctx.fillRect(-30, -22, 60, 3); // 선글라스 테
+            ctx.fillStyle = "#000"; ctx.fillRect(-28, -20, 22, 15); ctx.fillRect(6, -20, 22, 15); // 알
+            ctx.fillStyle = "#000044"; ctx.fillRect(-45, 5, 90, 70); // 정장
+            ctx.fillStyle = "#fff"; ctx.fillRect(-12, 5, 24, 70); // 와이셔츠
+        }
+        ctx.restore();
+    }
+
+    function drawNote(n, y) {
+        const x = (n.lane - 1) * LANE_WIDTH + 25, w = LANE_WIDTH - 50, h = 60;
+        ctx.save();
+        if (n.type === 'REAL') {
+            ctx.fillStyle = "#2e7d32"; ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = "#1b5e20"; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = "#f5f5dc"; ctx.fillRect(x + w*0.35, y, w*0.3, h); // 띠지
+            ctx.fillStyle = "#fff"; ctx.font = "bold 18px monospace"; ctx.fillText("10000", x+15, y+38);
+        } else {
+            // [회장님 얼굴] 눈썹, 올백머리, 인상 쓴 눈매
+            ctx.fillStyle = "#4a4a4a"; ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 4; ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = "#ffe0bd"; ctx.fillRect(x+w/2-25, y+10, 50, 40); // 얼굴
+            ctx.fillStyle = "#999"; ctx.fillRect(x+w/2-28, y+5, 56, 12); // 올백 머리
+            ctx.fillStyle = "#333"; ctx.fillRect(x+w/2-20, y+22, 15, 4); ctx.fillRect(x+w/2+5, y+22, 15, 4); // 짙은 눈썹
+            ctx.fillStyle = "#000"; ctx.fillRect(x+w/2-18, y+28, 10, 2); ctx.fillRect(x+w/2+8, y+28, 10, 2); // 찢어진 눈매
+            ctx.fillStyle = "#888"; ctx.fillRect(x+w/2-10, y+45, 20, 3); // 앙다문 입
+        }
+        ctx.restore();
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cur = audio.currentTime * 1000;
+
+        // 네온 레인 구분선
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.15)";
+        for(let i=1; i<LANE_COUNT; i++) {
+            ctx.beginPath(); ctx.moveTo(i*LANE_WIDTH, 0); ctx.lineTo(i*LANE_WIDTH, 900); ctx.stroke();
+        }
+
+        // 판정선 (네온 핑크 글로우)
+        ctx.shadowBlur = 15; ctx.shadowColor = "var(--retro-pink)";
+        ctx.fillStyle = "#ff69b4"; ctx.fillRect(0, 710, canvas.width, 10);
+        ctx.shadowBlur = 0;
+
+        if (isPlaying) {
+            currentNotes.forEach(n => {
+                if (n.hit) return;
+                let ny = 710 - (n.time - cur) * 0.75;
+                if (ny > -70 && ny < 900) drawNote(n, ny);
+                if (ny > 760 && !n.hit) {
+                    n.hit = true; 
+                    if(n.type === 'REAL') { life += 10; updateUI(); }
+                }
+            });
+            drawCharacter();
+        }
+        requestAnimationFrame(render);
+    }
+    render();
 </script>
 </body>
 </html>
