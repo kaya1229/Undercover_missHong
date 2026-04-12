@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>언더커버 미쓰홍 1980 - 모바일</title>
+    <title>언더커버 미쓰홍 1980 - 디럭스</title>
     <style>
         :root {
             --retro-red: #ff3e3e;
             --retro-blue: #00f2ff;
             --retro-gold: #ffd700;
             --gameboy-grey: #8b8b8b;
-            --screen-green: #9bbc0f; /* 고전 게임기 액정 색상 */
-            --krw-green: #2e7d32;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #1a1a1a; font-family: 'Courier New', monospace;
+            background: #000; font-family: 'Courier New', monospace;
             overflow: hidden; touch-action: none;
         }
 
@@ -24,88 +22,83 @@
         #intro-screen {
             position: absolute; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: radial-gradient(circle, #2c1a1a 0%, #000 100%);
-            z-index: 100; transition: opacity 0.5s;
-        }
-
-        #intro-screen h1 {
-            color: var(--retro-red); text-align: center; font-size: 28px;
-            text-shadow: 3px 3px var(--retro-blue); margin-bottom: 50px;
+            background: radial-gradient(circle, #1a0a0a 0%, #000 100%);
+            z-index: 100;
         }
 
         .start-btn {
-            width: 200px; height: 60px; background: var(--retro-red);
-            color: #fff; border: 4px solid #fff; font-weight: bold; font-size: 20px;
+            width: 220px; height: 70px; background: var(--retro-red);
+            color: #fff; border: 4px solid #fff; font-weight: 900; font-size: 22px;
             box-shadow: 6px 6px 0 var(--retro-blue); cursor: pointer;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
         /* [2] 게임 메인 컨테이너 */
         #game-view {
             display: none; width: 100%; height: 100%;
-            flex-direction: column; background: #222;
+            flex-direction: column;
         }
 
-        /* 상단 전광판 */
         #scoreboard {
-            height: 80px; background: #000; border-bottom: 3px solid var(--gameboy-grey);
-            display: flex; justify-content: space-around; align-items: center; color: var(--retro-blue);
+            height: 70px; background: #111; border-bottom: 3px solid #333;
+            display: flex; justify-content: space-around; align-items: center;
         }
 
-        .stat-box { text-align: center; }
-        .label { font-size: 10px; color: #aaa; margin-bottom: 4px; }
-        .val { font-size: 18px; font-weight: bold; color: var(--retro-gold); }
+        .val { font-size: 20px; font-weight: bold; color: var(--retro-gold); text-shadow: 0 0 10px var(--retro-gold); }
 
-        /* 게임 캔버스 (화면 꽉 차게) */
-        #canvas-wrap { flex: 1; position: relative; background: #050505; }
+        #canvas-wrap { flex: 1; position: relative; background: #050505; overflow: hidden; }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
 
         /* [3] 레트로 터치 컨트롤 */
         #controller {
-            height: 180px; background: var(--gameboy-grey);
-            display: flex; justify-content: center; align-items: center;
-            border-top: 5px solid #555; gap: 20px; padding: 0 10px;
+            height: 160px; background: var(--gameboy-grey);
+            display: flex; justify-content: center; align-items: center; gap: 25px;
+            border-top: 6px solid #444;
         }
 
         .retro-btn {
-            width: 80px; height: 80px; background: #333; border-radius: 50%;
-            border: 5px solid #111; box-shadow: 0 6px 0 #000;
+            width: 75px; height: 75px; background: #cc0000; border-radius: 50%;
+            border: 5px solid #600; box-shadow: 0 6px 0 #400;
             display: flex; justify-content: center; align-items: center;
-            color: #fff; font-size: 24px; font-weight: bold;
-            transition: 0.1s; -webkit-tap-highlight-color: transparent;
+            color: #fff; font-size: 28px; font-weight: 900;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .retro-btn:active {
-            transform: translateY(4px); box-shadow: 0 2px 0 #000;
-            background: var(--retro-red);
-        }
+        .retro-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #400; background: #ff0000; }
 
-        /* 판정 효과 */
         #judge-tag {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 36px; font-weight: 900; z-index: 10; pointer-events: none;
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 40px; font-weight: 900; z-index: 10; pointer-events: none;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
 
 <div id="intro-screen">
-    <h1>UNDERCOVER<br>MISS HONG<br>1980</h1>
-    <button class="start-btn" onclick="initGame()">MISSION START</button>
+    <h1 style="color:white; text-align:center; margin-bottom:40px;">UNDERCOVER<br><span style="color:var(--retro-red)">MISS HONG</span></h1>
+    <button class="start-btn" onclick="initGame()">INSERT COIN</button>
 </div>
 
 <div id="game-view">
     <div id="scoreboard">
-        <div class="stat-box"><div class="label">CASH</div><div class="val" id="score">0</div></div>
-        <div class="stat-box"><div class="label">SUSPICION</div><div class="val" id="life" style="color:var(--retro-red)">0%</div></div>
+        <div class="val" id="score">₩ 0</div>
+        <div class="val" id="life" style="color:var(--retro-red)">SUS: 0%</div>
     </div>
     <div id="canvas-wrap">
         <div id="judge-tag"></div>
         <canvas id="gameCanvas"></canvas>
     </div>
     <div id="controller">
-        <div class="retro-btn" ontouchstart="handlePress(1)" onmousedown="handlePress(1)">1</div>
-        <div class="retro-btn" ontouchstart="handlePress(2)" onmousedown="handlePress(2)">2</div>
-        <div class="retro-btn" ontouchstart="handlePress(3)" onmousedown="handlePress(3)">3</div>
+        <div class="retro-btn" ontouchstart="handlePress(1)">1</div>
+        <div class="retro-btn" ontouchstart="handlePress(2)">2</div>
+        <div class="retro-btn" ontouchstart="handlePress(3)">3</div>
     </div>
 </div>
 
@@ -117,19 +110,18 @@
     let isPlaying = false;
     let score = 0, life = 0;
     let notes = [];
-    let state = 'IDLE'; // IDLE, HIT, PANIC
-    
-    // 장부 데이터 (모바일 대응 최적화 속도)
+    let state = 'IDLE'; 
+    let shake = 0;
+    let comboEffect = { lane: 0, timer: 0 };
+    let frame = 0;
+
     const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"},{"time":18368,"lane":3,"type":"REAL"},{"time":19102,"lane":2,"type":"REAL"},{"time":20005,"lane":2,"type":"REAL"},{"time":20956,"lane":2,"type":"REAL"},{"time":21869,"lane":1,"type":"REAL"},{"time":22606,"lane":3,"type":"REAL"},{"time":23948,"lane":1,"type":"REAL"},{"time":24970,"lane":2,"type":"REAL"},{"time":26147,"lane":3,"type":"REAL"},{"time":27642,"lane":1,"type":"REAL"},{"time":28654,"lane":2,"type":"REAL"},{"time":29513,"lane":3,"type":"REAL"},{"time":30880,"lane":2,"type":"REAL"},{"time":32195,"lane":3,"type":"REAL"},{"time":33701,"lane":1,"type":"REAL"},{"time":34772,"lane":3,"type":"REAL"},{"time":35731,"lane":2,"type":"REAL"},{"time":36732,"lane":1,"type":"REAL"},{"time":38231,"lane":3,"type":"REAL"},{"time":39789,"lane":3,"type":"REAL"},{"time":40735,"lane":2,"type":"REAL"},{"time":42165,"lane":1,"type":"REAL"},{"time":43166,"lane":2,"type":"REAL"},{"time":44617,"lane":1,"type":"REAL"},{"time":45780,"lane":3,"type":"REAL"},{"time":46812,"lane":1,"type":"REAL"},{"time":47802,"lane":2,"type":"REAL"},{"time":48830,"lane":3,"type":"REAL"}];
 
     function initGame() {
-        document.getElementById('intro-screen').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('intro-screen').style.display = 'none';
-            document.getElementById('game-view').style.display = 'flex';
-            resize();
-            startGame();
-        }, 500);
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('game-view').style.display = 'flex';
+        resize();
+        startGame();
     }
 
     function resize() {
@@ -141,140 +133,127 @@
         isPlaying = true;
         score = 0; life = 0;
         notes = rawData.map(n => ({...n, hit: false, type: Math.random() < 0.2 ? 'FAKE' : 'REAL'}));
-        audio.currentTime = 0;
-        audio.play().catch(e => console.log("Audio play deferred"));
+        audio.play();
         requestAnimationFrame(gameLoop);
     }
 
     function handlePress(lane) {
         if(!isPlaying) return;
         const now = audio.currentTime * 1000;
-        const judgeLineY = canvas.height * 0.8;
-        
         const note = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - now) < 200);
         
         if(note) {
             note.hit = true;
+            comboEffect = { lane: lane, timer: 10 };
             if(note.type === 'REAL') {
-                score += 10000; updateUI(); setJudge("EXCELLENT", "#00f2ff"); state = 'HIT';
+                score += 10000; shake = 8; state = 'HIT';
+                setJudge("EXCELLENT!", "#00f2ff");
             } else {
-                life += 25; updateUI(); setJudge("FAKE!!", "#ff3e3e"); state = 'PANIC';
+                life += 20; shake = 15; state = 'PANIC';
+                setJudge("BUSTED!!", "#ff3e3e");
             }
-            setTimeout(() => state = 'IDLE', 400);
+            updateUI();
+            setTimeout(() => state = 'IDLE', 500);
         }
     }
 
     function setJudge(txt, col) {
         const tag = document.getElementById('judge-tag');
         tag.innerText = txt; tag.style.color = col;
-        tag.style.textShadow = `0 0 10px ${col}`;
-        setTimeout(() => { if(tag.innerText === txt) tag.innerText = ''; }, 500);
+        setTimeout(() => tag.innerText = '', 400);
     }
 
     function updateUI() {
-        document.getElementById('score').innerText = score.toLocaleString();
-        document.getElementById('life').innerText = life + '%';
-        if(life >= 100) {
-            isPlaying = false; audio.pause();
-            alert("의심도 100%! 정체가 탄로났습니다.\n최종 수거액: ₩" + score.toLocaleString());
-            location.reload();
-        }
+        document.getElementById('score').innerText = '₩ ' + score.toLocaleString();
+        document.getElementById('life').innerText = 'SUS: ' + life + '%';
+        if(life >= 100) { isPlaying = false; alert("정체가 탄로났습니다!"); location.reload(); }
     }
 
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
         const cy = canvas.height * 0.85;
-        ctx.save();
-        ctx.translate(cx, cy);
+        const bounce = Math.sin(frame * 0.2) * 5;
+        const jump = (state === 'HIT') ? -20 : 0;
 
-        if(state === 'IDLE') {
-            // 홍장미 픽셀 (드라마 느낌 - 뽀글 머리 + 분홍색 자켓)
-            ctx.fillStyle = '#3a2112'; ctx.fillRect(-25, -55, 50, 40); // 뽀글머리
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-20, -35, 40, 30); // 얼굴
-            ctx.fillStyle = '#000'; ctx.fillRect(-12, -25, 6, 6); ctx.fillRect(6, -25, 6, 6); // 눈
-            ctx.fillStyle = '#ff69b4'; ctx.fillRect(-30, -5, 60, 45); // 분홍 자켓
-            ctx.fillStyle = '#fff'; ctx.fillRect(-5, -5, 10, 45); // 셔츠 리본
-        } else if(state === 'HIT') {
-            // 미쓰홍 변신 (선글라스 + 검정 정장)
-            ctx.fillStyle = '#000'; ctx.fillRect(-25, -65, 50, 100); // 긴머리
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-20, -35, 40, 30); // 얼굴
-            ctx.fillStyle = '#111'; ctx.fillRect(-22, -22, 18, 12); ctx.fillRect(4, -22, 18, 12); // 선글라스
-            ctx.fillStyle = '#000033'; ctx.fillRect(-30, -5, 60, 45); // 남색 정장
+        ctx.save();
+        ctx.translate(cx, cy + bounce + jump);
+
+        if(state === 'IDLE' || state === 'PANIC') {
+            // 홍장미 디테일 (뽀글머리 텍스처)
+            ctx.fillStyle = '#2a1a0a'; 
+            [-28, -10, 10, 20].forEach(ox => ctx.fillRect(ox, -65, 15, 15)); // 뽀글뽀글 정수리
+            ctx.fillRect(-30, -55, 60, 45); // 머리통
+            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-22, -40, 44, 35); // 얼굴
+            ctx.fillStyle = '#000'; ctx.fillRect(-12, -28, 6, 6); ctx.fillRect(8, -28, 6, 6); // 눈
+            if(state === 'PANIC') { ctx.fillStyle = '#ff0000'; ctx.fillRect(-10, -15, 20, 4); } // 입
+            ctx.fillStyle = '#ff69b4'; ctx.fillRect(-35, -5, 70, 50); // 핑크 자켓
         } else {
-            // 당황 (PANIC)
-            ctx.fillStyle = '#3a2112'; ctx.fillRect(-25, -55, 50, 40);
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-20, -35, 40, 30);
-            ctx.fillStyle = '#ff3e3e'; ctx.fillRect(-12, -25, 6, 2); ctx.fillRect(6, -25, 6, 2); // ㅡ_ㅡ 눈
-            ctx.fillStyle = '#ff69b4'; ctx.fillRect(-30, -5, 60, 45);
+            // 미쓰홍 (홍금보 스타일의 절도있는 변신)
+            ctx.fillStyle = '#000'; ctx.fillRect(-28, -75, 56, 110); // 긴 검은 머리
+            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(-22, -40, 44, 35);
+            ctx.fillStyle = '#111'; ctx.fillRect(-25, -28, 20, 12); ctx.fillRect(5, -28, 20, 12); // 블랙 선글라스
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(8, -25, 5, 2); // 선글라스 반짝임
+            ctx.fillStyle = '#000044'; ctx.fillRect(-35, -5, 70, 50); // 정장
         }
         ctx.restore();
     }
 
     function drawNote(ctx, n, y) {
         const laneW = canvas.width / 3;
-        const x = (n.lane - 1) * laneW + 10;
-        const w = laneW - 20;
-        const h = 45;
-
-        // 픽셀 지폐 디자인
-        ctx.fillStyle = '#2e7d32'; ctx.fillRect(x, y, w, h); // 베이스
-        ctx.strokeStyle = '#1b5e20'; ctx.lineWidth = 4; ctx.strokeRect(x, y, w, h); // 테두리
-        
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(x+5, y+5, w-10, h-10); // 내부 패턴
+        const x = (n.lane - 1) * laneW + 15;
+        const w = laneW - 30;
+        const h = 50;
 
         if(n.type === 'REAL') {
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 12px monospace';
-            ctx.fillText("10000", x+10, y+28);
-            ctx.fillStyle = '#1b5e20'; ctx.fillRect(x+w-25, y+10, 15, 25); // 인물 실루엣
+            ctx.fillStyle = '#2e7d32'; ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#fff'; ctx.strokeRect(x+2, y+2, w-4, h-4);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 14px monospace'; ctx.fillText("10000", x+10, y+30);
         } else {
-            // 회장님 FAKE 지폐
-            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(x+w/2-10, y+10, 20, 25); // 얼굴
-            ctx.fillStyle = '#000'; ctx.fillRect(x+w/2-10, y+10, 20, 8); // 회장님 가발
-            ctx.fillStyle = '#ff3e3e'; ctx.font = 'bold 12px monospace';
-            ctx.fillText("FAKE", x+5, y+28);
+            // 회장님 지폐 디테일
+            ctx.fillStyle = '#442200'; ctx.fillRect(x, y, w, h); // 칙칙한 갈색 지폐
+            ctx.fillStyle = '#ffe0bd'; ctx.fillRect(x+w/2-12, y+10, 24, 30); // 얼굴
+            ctx.fillStyle = '#333'; ctx.fillRect(x+w/2-15, y+8, 30, 10); // 대머리 양옆 머리
+            ctx.strokeStyle = '#000'; ctx.strokeRect(x+w/2-10, y+20, 8, 8); ctx.strokeRect(x+w/2+2, y+20, 8, 8); // 안경
+            ctx.fillStyle = '#ff0000'; ctx.font = '900 12px sans-serif'; ctx.fillText("FAKE", x+5, y+15);
         }
     }
 
     function gameLoop() {
         if(!isPlaying) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frame++;
+        
+        // 화면 흔들림 적용
+        let sx = (Math.random() - 0.5) * shake;
+        let sy = (Math.random() - 0.5) * shake;
+        if(shake > 0) shake *= 0.9;
+
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.clearRect(-20, -20, canvas.width+40, canvas.height+40);
         
         const now = audio.currentTime * 1000;
         const judgeLineY = canvas.height * 0.8;
 
-        // 레인 가이드선
-        ctx.strokeStyle = '#333';
-        for(let i=1; i<3; i++) {
-            ctx.beginPath(); ctx.moveTo(i*(canvas.width/3), 0); ctx.lineTo(i*(canvas.width/3), canvas.height); ctx.stroke();
+        // 타격 이펙트 (레이저)
+        if(comboEffect.timer > 0) {
+            ctx.fillStyle = `rgba(0, 242, 255, ${comboEffect.timer / 10})`;
+            ctx.fillRect((comboEffect.lane-1)*(canvas.width/3), 0, canvas.width/3, canvas.height);
+            comboEffect.timer--;
         }
-
-        // 판정선
-        ctx.fillStyle = 'rgba(255, 62, 62, 0.5)';
-        ctx.fillRect(0, judgeLineY, canvas.width, 4);
 
         notes.forEach(n => {
             if(n.hit) return;
-            let ny = judgeLineY - (n.time - now) * 0.5; // 속도 조절
-            if(ny > -50 && ny < canvas.height) {
-                drawNote(ctx, n, ny);
-            }
-            if(ny > judgeLineY + 60) {
-                n.hit = true;
-                if(n.type === 'REAL') { life += 5; updateUI(); }
-            }
+            let ny = judgeLineY - (n.time - now) * 0.6;
+            if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
+            if(ny > judgeLineY + 100) { n.hit = true; if(n.type === 'REAL') { life += 5; updateUI(); } }
         });
 
         drawCharacter(ctx);
+        ctx.restore();
         requestAnimationFrame(gameLoop);
     }
 
     window.addEventListener('resize', resize);
-    window.addEventListener('keydown', (e) => {
-        if(e.key === '1') handlePress(1);
-        if(e.key === '2') handlePress(2);
-        if(e.key === '3') handlePress(3);
-    });
 </script>
 </body>
 </html>
