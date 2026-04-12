@@ -17,6 +17,7 @@
             --retro-purple: #9b59b6;
         }
 
+        /* [핵심] 시스템 간섭 및 검색창 방지 */
         * {
             -webkit-tap-highlight-color: transparent;
             user-select: none;
@@ -31,6 +32,7 @@
             overflow: hidden; color: var(--pixel-white);
         }
 
+        /* 스캔라인 효과 */
         body::after {
             content: " ";
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -65,7 +67,6 @@
 
         .primary-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px var(--retro-blue); }
         
-        /* 에디터 버튼 전용 스타일 */
         .editor-btn { background: var(--pixel-bg); color: var(--pixel-white); border-color: var(--retro-purple); box-shadow: 6px 6px 0px var(--retro-purple); }
 
         #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
@@ -100,6 +101,7 @@
         #judge-tag {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             font-size: 18px; z-index: 10; pointer-events: none; text-align: center;
+            text-shadow: 2px 2px #000;
         }
     </style>
 </head>
@@ -147,8 +149,8 @@
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3'); 
 
-    const imgRose = new Image(); imgRose.src = '17759888220732(2).png';
-    const imgMiss = new Image(); imgMiss.src = '17759888220732(3).png';
+    const imgRose = new Image(); imgRose.src = '1775988220732(2).png';
+    const imgMiss = new Image(); imgMiss.src = '1775988220732(3).png';
     const imgRealBill = new Image(); imgRealBill.src = '1775986100725.png';
     const imgFakeBill = new Image(); imgFakeBill.src = '1775986746405.png';
     
@@ -161,8 +163,8 @@
     let shake = 0, frame = 0;
     let comboEffect = { lane: 0, timer: 0 };
 
-    // 기존 데이터
-    const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"}];
+    // 현재 채보 데이터 (에디터 모드 가이드용)
+    const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"},{"time":18368,"lane":3,"type":"REAL"},{"time":19102,"lane":2,"type":"REAL"},{"time":20005,"lane":2,"type":"REAL"},{"time":20956,"lane":2,"type":"REAL"},{"time":21869,"lane":1,"type":"REAL"},{"time":22606,"lane":3,"type":"REAL"},{"time":23948,"lane":1,"type":"REAL"},{"time":24970,"lane":2,"type":"REAL"},{"time":26147,"lane":3,"type":"REAL"},{"time":27642,"lane":1,"type":"REAL"},{"time":28654,"lane":2,"type":"REAL"},{"time":29513,"lane":3,"type":"REAL"},{"time":30880,"lane":2,"type":"REAL"},{"time":32195,"lane":3,"type":"REAL"},{"time":33701,"lane":1,"type":"REAL"},{"time":34772,"lane":3,"type":"REAL"},{"time":35731,"lane":2,"type":"REAL"},{"time":36732,"lane":1,"type":"REAL"},{"time":38231,"lane":3,"type":"REAL"},{"time":39789,"lane":3,"type":"REAL"},{"time":40735,"lane":2,"type":"REAL"},{"time":42165,"lane":1,"type":"REAL"},{"time":43166,"lane":2,"type":"REAL"},{"time":44617,"lane":1,"type":"REAL"},{"time":45780,"lane":3,"type":"REAL"},{"time":46812,"lane":1,"type":"REAL"},{"time":47802,"lane":2,"type":"REAL"},{"time":48830,"lane":3,"type":"REAL"}];
 
     function initGame(editor) {
         isEditorMode = editor;
@@ -170,10 +172,9 @@
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-view').style.display = 'flex';
         
-        // 에디터 모드 전용 UI 변경
         if(isEditorMode) {
             document.getElementById('label-score').innerText = "EDITOR";
-            document.getElementById('score').innerText = "RECORDING";
+            document.getElementById('score').innerText = "GUIDE ON";
             document.getElementById('label-life').innerText = "STATUS";
         } else {
             document.getElementById('label-score').innerText = "CASH";
@@ -196,7 +197,7 @@
     function startGame() {
         isPlaying = true;
         score = 0; life = 0; editedNotes = [];
-        notes = isEditorMode ? [] : rawData.map(n => ({...n, hit: false, type: Math.random() < 0.2 ? 'FAKE' : 'REAL'}));
+        notes = rawData.map(n => ({...n, hit: false, type: n.type || (Math.random() < 0.2 ? 'FAKE' : 'REAL')}));
         audio.currentTime = 0;
         audio.play();
         requestAnimationFrame(gameLoop);
@@ -222,11 +223,11 @@
             comboEffect = { lane: lane, timer: 15 };
             if(note.type === 'REAL') {
                 state = 'HIT';
-                if(diff < 60) { score += 15000; setJudge("PERFECT!", "#ffd700"); }
-                else if(diff < 120) { score += 10000; setJudge("GREAT!", "#00f2ff"); }
-                else { score += 5000; setJudge("GOOD", "#ffffff"); }
+                if(diff < 60) { score += 15000; shake = 15; setJudge("PERFECT!", "#ffd700"); }
+                else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
+                else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
             } else {
-                life += 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
+                life += 30; shake = 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
             }
             updateUI();
             setTimeout(() => state = 'IDLE', 450);
@@ -255,8 +256,8 @@
             document.getElementById('result-title').innerText = "DONE!";
             document.getElementById('result-title').style.color = "var(--retro-purple)";
             document.getElementById('result-desc').innerText = "CHECK CONSOLE (F12)";
-            document.getElementById('final-score').innerText = editedNotes.length + " NOTES";
-            console.log("--- COPY THIS DATA ---");
+            document.getElementById('final-score').innerText = editedNotes.length + " NEW NOTES";
+            console.log("--- NEW DATA COLLECTED ---");
             console.log(JSON.stringify(editedNotes));
         } else {
             document.getElementById('result-title').innerText = "BUSTED!";
@@ -290,7 +291,11 @@
         const w = laneW - 30;
         const h = 55;
         const targetImg = (n.type === 'REAL') ? imgRealBill : imgFakeBill;
+        
+        ctx.save();
+        if(isEditorMode) ctx.globalAlpha = 0.5; // 에디터 모드 가이드 투명도
         if (targetImg.complete) ctx.drawImage(targetImg, x, y, w, h);
+        ctx.restore();
     }
 
     function gameLoop() {
@@ -317,22 +322,22 @@
         ctx.setLineDash([]);
 
         if(comboEffect.timer > 0) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${comboEffect.timer / 20})`;
+            ctx.fillStyle = isEditorMode ? `rgba(155, 89, 182, ${comboEffect.timer / 20})` : `rgba(255, 255, 255, ${comboEffect.timer / 20})`;
             ctx.fillRect((comboEffect.lane-1)*(canvas.width/3), 0, canvas.width/3, canvas.height);
             comboEffect.timer--;
         }
 
-        if(!isEditorMode) {
-            notes.forEach(n => {
-                if(n.hit) return;
-                let ny = judgeLineY - (n.time - now) * 0.75;
-                if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
-                if(ny > judgeLineY + 50) { 
-                    n.hit = true; 
-                    if(n.type === 'REAL') { life += 8; updateUI(); setJudge("MISS", "#666"); }
-                }
-            });
-        }
+        notes.forEach(n => {
+            if(n.hit) return;
+            let ny = judgeLineY - (n.time - now) * 0.75;
+            if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
+            
+            // 게임 모드에서만 놓쳤을 때 MISS 처리
+            if(!isEditorMode && ny > judgeLineY + 50) { 
+                n.hit = true; 
+                if(n.type === 'REAL') { life += 8; updateUI(); setJudge("MISS", "#666"); }
+            }
+        });
 
         drawCharacter(ctx);
         ctx.restore();
