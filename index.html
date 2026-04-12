@@ -3,90 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>언더커버 미쓰홍 1980 - 이미지 버전</title>
+    <title>언더커버 미쓰홍 1980 - 픽셀 에디션</title>
     <style>
+        /* [폰트/컬러 설정] */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
         :root {
-            --retro-red: #ff3e3e;
-            --retro-blue: #00f2ff;
-            --retro-gold: #ffd700;
-            --gameboy-grey: #8b8b8b;
+            --pixel-bg: #22252c;
+            --pixel-white: #e0f8cf; /* 게임보이 스타일 연두/흰색 */
+            --pixel-black: #081820;
+            --retro-red: #e74c3c;
+            --retro-blue: #3498db;
+            --retro-gold: #f1c40f;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #000; font-family: 'Courier New', monospace;
-            overflow: hidden; touch-action: none;
+            background: var(--pixel-black);
+            font-family: 'Press Start 2P', cursive, monospace; /* 레트로 폰트 */
+            overflow: hidden; touch-action: none; color: var(--pixel-white);
         }
 
+        /* [스캔라인 효과] */
+        body::after {
+            content: " ";
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            z-index: 200; pointer-events: none;
+        }
+
+        /* [인트로] */
         #intro-screen {
             position: absolute; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: radial-gradient(circle, #1a0a0a 0%, #000 100%);
-            z-index: 100;
+            background: var(--pixel-black); z-index: 100;
+        }
+
+        #intro-screen h1 {
+            font-size: 18px; line-height: 1.8; text-align: center;
+            color: var(--retro-red); text-shadow: 4px 4px 0px #fff;
+            margin-bottom: 60px;
         }
 
         .start-btn {
-            width: 220px; height: 70px; background: var(--retro-red);
-            color: #fff; border: 4px solid #fff; font-weight: 900; font-size: 22px;
-            box-shadow: 6px 6px 0 var(--retro-blue); cursor: pointer;
-            animation: pulse 1s infinite;
+            padding: 20px 40px; background: var(--pixel-white); color: var(--pixel-black);
+            border: 6px solid var(--retro-blue); font-family: 'Press Start 2P';
+            font-size: 14px; cursor: pointer;
+            box-shadow: 8px 8px 0px var(--retro-blue);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        #game-view {
-            display: none; width: 100%; height: 100%;
-            flex-direction: column;
-        }
+        /* [게임 뷰 구성] */
+        #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
 
         #scoreboard {
-            height: 70px; background: #111; border-bottom: 3px solid #333;
-            display: flex; justify-content: space-around; align-items: center;
+            height: 85px; background: var(--pixel-bg);
+            border-bottom: 6px solid var(--pixel-white);
+            display: flex; flex-direction: column; justify-content: center; padding: 0 15px;
+            gap: 10px;
         }
 
-        .val { font-size: 20px; font-weight: bold; color: var(--retro-gold); text-shadow: 0 0 10px var(--retro-gold); }
+        .stat-line { display: flex; justify-content: space-between; font-size: 10px; }
+        .bar-bg { width: 100px; height: 12px; background: #444; border: 2px solid var(--pixel-white); }
+        #sus-fill { width: 0%; height: 100%; background: var(--retro-red); transition: width 0.3s; }
 
-        #canvas-wrap { flex: 1; position: relative; background: #050505; overflow: hidden; }
+        #canvas-wrap { flex: 1; position: relative; background: #000; }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
 
+        /* [하단 컨트롤러] */
         #controller {
-            height: 160px; background: var(--gameboy-grey);
-            display: flex; justify-content: center; align-items: center; gap: 25px;
-            border-top: 6px solid #444;
+            height: 170px; background: #555;
+            display: flex; justify-content: center; align-items: center; gap: 20px;
+            border-top: 8px solid var(--pixel-white);
+            position: relative;
         }
 
         .retro-btn {
-            width: 75px; height: 75px; background: #cc0000; border-radius: 50%;
-            border: 5px solid #600; box-shadow: 0 6px 0 #400;
+            width: 70px; height: 70px; background: #999;
+            border: 4px solid #fff; border-bottom-width: 8px; border-right-width: 8px;
             display: flex; justify-content: center; align-items: center;
-            color: #fff; font-size: 28px; font-weight: 900;
-            -webkit-tap-highlight-color: transparent;
+            color: #fff; font-size: 20px; text-shadow: 2px 2px #000;
         }
 
-        .retro-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #400; background: #ff0000; }
+        .retro-btn:active {
+            transform: translate(2px, 2px);
+            border-bottom-width: 4px; border-right-width: 4px;
+            background: var(--retro-red);
+        }
 
         #judge-tag {
-            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 40px; font-weight: 900; z-index: 10; pointer-events: none;
-            font-style: italic; text-shadow: 2px 2px #000;
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 22px; z-index: 10; pointer-events: none; text-align: center;
         }
     </style>
 </head>
 <body>
 
 <div id="intro-screen">
-    <h1 style="color:white; text-align:center; margin-bottom:40px;">UNDERCOVER<br><span style="color:var(--retro-red)">MISS HONG</span></h1>
-    <button class="start-btn" onclick="initGame()">INSERT COIN</button>
+    <h1>UNDERCOVER<br>MISS HONG<br><span style="color:#fff">1980</span></h1>
+    <button class="start-btn" onclick="initGame()">PRESS START</button>
 </div>
 
 <div id="game-view">
     <div id="scoreboard">
-        <div class="val" id="score">₩ 0</div>
-        <div class="val" id="life" style="color:var(--retro-red)">SUS: 0%</div>
+        <div class="stat-line">
+            <span>CASH</span>
+            <span id="score" style="color:var(--retro-gold)">₩ 0</span>
+        </div>
+        <div class="stat-line">
+            <span>SUSPICION</span>
+            <div class="bar-bg"><div id="sus-fill"></div></div>
+        </div>
     </div>
     <div id="canvas-wrap">
         <div id="judge-tag"></div>
@@ -104,7 +132,7 @@
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3'); 
 
-    // 이미지 프리로딩
+    // 이미지 경로 (전달해주신 파일명)
     const imgRose = new Image(); imgRose.src = '1775988220732(2).png';
     const imgMiss = new Image(); imgMiss.src = '1775988220732(3).png';
     const imgRealBill = new Image(); imgRealBill.src = '1775986100725.png';
@@ -146,13 +174,13 @@
         
         if(note) {
             note.hit = true;
-            comboEffect = { lane: lane, timer: 12 };
+            comboEffect = { lane: lane, timer: 15 };
             if(note.type === 'REAL') {
-                score += 10000; shake = 10; state = 'HIT';
-                setJudge("EXCELLENT!", "#00f2ff");
+                score += 10000; shake = 12; state = 'HIT';
+                setJudge("COOL!!", "#00f2ff");
             } else {
-                life += 20; shake = 20; state = 'PANIC';
-                setJudge("FAKE BILL!!", "#ff3e3e");
+                life += 25; shake = 25; state = 'PANIC';
+                setJudge("BAD!", "#ff3e3e");
             }
             updateUI();
             setTimeout(() => state = 'IDLE', 400);
@@ -166,27 +194,25 @@
     }
 
     function updateUI() {
-        document.getElementById('score').innerText = '₩ ' + score.toLocaleString();
-        document.getElementById('life').innerText = 'SUS: ' + life + '%';
-        if(life >= 100) { isPlaying = false; audio.pause(); alert("미션 실패! 정체가 탄로났습니다."); location.reload(); }
+        document.getElementById('score').innerText = '₩' + score.toLocaleString();
+        document.getElementById('sus-fill').style.width = life + '%';
+        if(life >= 100) { isPlaying = false; audio.pause(); alert("GAMEOVER - BUSTED!"); location.reload(); }
     }
 
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
         const cy = canvas.height * 0.85;
-        const bounce = Math.sin(frame * 0.25) * 6;
-        const jump = (state === 'HIT') ? -35 : 0;
+        const bounce = Math.sin(frame * 0.3) * 8;
+        const jump = (state === 'HIT') ? -40 : 0;
 
-        const charW = 110; 
-        const charH = 130;
-
+        const charW = 100; const charH = 120;
         ctx.save();
         ctx.translate(cx, cy + bounce + jump);
 
         if (state === 'HIT') {
             if (imgMiss.complete) ctx.drawImage(imgMiss, -charW/2, -charH + 20, charW, charH);
         } else {
-            if (state === 'PANIC') ctx.filter = 'brightness(1.5) sepia(1) hue-rotate(-50deg)';
+            if (state === 'PANIC') ctx.filter = 'invert(0.5) sepia(1) saturate(5) hue-rotate(-50deg)';
             if (imgRose.complete) ctx.drawImage(imgRose, -charW/2, -charH + 20, charW, charH);
             ctx.filter = 'none';
         }
@@ -195,16 +221,13 @@
 
     function drawNote(ctx, n, y) {
         const laneW = canvas.width / 3;
-        const x = (n.lane - 1) * laneW + 12;
-        const w = laneW - 24;
+        const x = (n.lane - 1) * laneW + 15;
+        const w = laneW - 30;
         const h = 55;
 
         const targetImg = (n.type === 'REAL') ? imgRealBill : imgFakeBill;
         if (targetImg.complete) {
             ctx.drawImage(targetImg, x, y, w, h);
-        } else {
-            ctx.fillStyle = (n.type === 'REAL') ? '#2e7d32' : '#ff3e3e';
-            ctx.fillRect(x, y, w, h);
         }
     }
 
@@ -214,7 +237,7 @@
         
         let sx = (Math.random() - 0.5) * shake;
         let sy = (Math.random() - 0.5) * shake;
-        if(shake > 0) shake *= 0.85;
+        if(shake > 0) shake *= 0.8;
 
         ctx.save();
         ctx.translate(sx, sy);
@@ -223,23 +246,25 @@
         const now = audio.currentTime * 1000;
         const judgeLineY = canvas.height * 0.82;
 
+        // 레인 구분선 (도트 느낌)
+        ctx.strokeStyle = '#222'; ctx.setLineDash([5, 5]);
+        for(let i=1; i<3; i++) {
+            ctx.beginPath(); ctx.moveTo(i*canvas.width/3, 0); ctx.lineTo(i*canvas.width/3, canvas.height); ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // 판정 이펙트
         if(comboEffect.timer > 0) {
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, 'transparent');
-            gradient.addColorStop(1, `rgba(0, 242, 255, ${comboEffect.timer / 15})`);
-            ctx.fillStyle = gradient;
+            ctx.fillStyle = `rgba(255, 255, 255, ${comboEffect.timer / 20})`;
             ctx.fillRect((comboEffect.lane-1)*(canvas.width/3), 0, canvas.width/3, canvas.height);
             comboEffect.timer--;
         }
 
         notes.forEach(n => {
             if(n.hit) return;
-            let ny = judgeLineY - (n.time - now) * 0.65;
+            let ny = judgeLineY - (n.time - now) * 0.7; // 속도 약간 상향
             if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
-            if(ny > judgeLineY + 80) { 
-                n.hit = true; 
-                if(n.type === 'REAL') { life += 5; updateUI(); setJudge("MISS", "#888"); }
-            }
+            if(ny > judgeLineY + 60) { n.hit = true; if(n.type === 'REAL') { life += 5; updateUI(); } }
         });
 
         drawCharacter(ctx);
