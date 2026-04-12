@@ -5,110 +5,130 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>언더커버 미쓰홍 1980 - 픽셀 에디션</title>
     <style>
-        /* [폰트/컬러 설정] */
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
         :root {
             --pixel-bg: #22252c;
-            --pixel-white: #e0f8cf; /* 게임보이 스타일 연두/흰색 */
+            --pixel-white: #e0f8cf;
             --pixel-black: #081820;
             --retro-red: #e74c3c;
             --retro-blue: #3498db;
             --retro-gold: #f1c40f;
         }
 
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background: var(--pixel-black);
-            font-family: 'Press Start 2P', cursive, monospace; /* 레트로 폰트 */
-            overflow: hidden; touch-action: none; color: var(--pixel-white);
+            font-family: 'Press Start 2P', cursive, monospace;
+            overflow: hidden; color: var(--pixel-white);
         }
 
-        /* [스캔라인 효과] */
         body::after {
             content: " ";
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 2px 100%;
             z-index: 200; pointer-events: none;
         }
 
-        /* [인트로] */
-        #intro-screen {
+        /* 공통 화면 스타일 */
+        .overlay-screen {
             position: absolute; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             background: var(--pixel-black); z-index: 100;
         }
 
-        #intro-screen h1 {
-            font-size: 18px; line-height: 1.8; text-align: center;
-            color: var(--retro-red); text-shadow: 4px 4px 0px #fff;
-            margin-bottom: 60px;
+        /* 결과 화면 전용 */
+        #result-screen { display: none; background: rgba(8, 24, 32, 0.95); }
+
+        .pixel-box {
+            padding: 30px; border: 6px solid var(--pixel-white);
+            background: var(--pixel-bg); text-align: center;
+            box-shadow: 10px 10px 0px var(--pixel-black);
+            margin-bottom: 30px;
         }
 
-        .start-btn {
-            padding: 20px 40px; background: var(--pixel-white); color: var(--pixel-black);
+        .primary-btn {
+            padding: 20px 30px; background: var(--pixel-white); color: var(--pixel-black);
             border: 6px solid var(--retro-blue); font-family: 'Press Start 2P';
-            font-size: 14px; cursor: pointer;
-            box-shadow: 8px 8px 0px var(--retro-blue);
+            font-size: 12px; cursor: pointer;
+            box-shadow: 6px 6px 0px var(--retro-blue);
+            touch-action: manipulation;
         }
 
-        /* [게임 뷰 구성] */
+        .primary-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px var(--retro-blue); }
+
         #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
 
         #scoreboard {
             height: 85px; background: var(--pixel-bg);
             border-bottom: 6px solid var(--pixel-white);
             display: flex; flex-direction: column; justify-content: center; padding: 0 15px;
-            gap: 10px;
+            gap: 10px; z-index: 10;
         }
 
         .stat-line { display: flex; justify-content: space-between; font-size: 10px; }
-        .bar-bg { width: 100px; height: 12px; background: #444; border: 2px solid var(--pixel-white); }
-        #sus-fill { width: 0%; height: 100%; background: var(--retro-red); transition: width 0.3s; }
+        .bar-bg { width: 120px; height: 12px; background: #444; border: 2px solid var(--pixel-white); }
+        #sus-fill { width: 0%; height: 100%; background: var(--retro-red); transition: width 0.2s; }
 
         #canvas-wrap { flex: 1; position: relative; background: #000; }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
 
-        /* [하단 컨트롤러] */
         #controller {
-            height: 170px; background: #555;
+            height: 180px; background: #444;
             display: flex; justify-content: center; align-items: center; gap: 20px;
             border-top: 8px solid var(--pixel-white);
-            position: relative;
         }
 
         .retro-btn {
-            width: 70px; height: 70px; background: #999;
+            width: 80px; height: 80px; background: #999;
             border: 4px solid #fff; border-bottom-width: 8px; border-right-width: 8px;
             display: flex; justify-content: center; align-items: center;
-            color: #fff; font-size: 20px; text-shadow: 2px 2px #000;
+            color: #fff; font-size: 24px; text-shadow: 2px 2px #000;
+            touch-action: manipulation;
         }
 
         .retro-btn:active {
-            transform: translate(2px, 2px);
+            transform: translate(4px, 4px);
             border-bottom-width: 4px; border-right-width: 4px;
             background: var(--retro-red);
         }
 
         #judge-tag {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 22px; z-index: 10; pointer-events: none; text-align: center;
+            font-size: 18px; z-index: 10; pointer-events: none; text-align: center;
+            text-shadow: 2px 2px #000;
         }
     </style>
 </head>
 <body>
 
-<div id="intro-screen">
-    <h1>UNDERCOVER<br>MISS HONG<br><span style="color:#fff">1980</span></h1>
-    <button class="start-btn" onclick="initGame()">PRESS START</button>
+<div id="intro-screen" class="overlay-screen">
+    <h1 style="color:var(--retro-red); text-align:center; font-size: 20px; line-height: 1.5;">MISS HONG<br><span style="color:#fff">1980</span></h1>
+    <button class="primary-btn" onclick="initGame()">INSERT COIN</button>
+</div>
+
+<div id="result-screen" class="overlay-screen">
+    <div class="pixel-box">
+        <p style="color:var(--retro-red); margin-bottom: 20px;">BUSTED!</p>
+        <p style="font-size: 10px; margin-bottom: 10px;">TOTAL COLLECTED:</p>
+        <p id="final-score" style="color:var(--retro-gold); font-size: 18px;">₩ 0</p>
+    </div>
+    <button class="primary-btn" onclick="resetGame()">RETRY</button>
 </div>
 
 <div id="game-view">
     <div id="scoreboard">
         <div class="stat-line">
-            <span>CASH</span>
+            <span>COLLECTED</span>
             <span id="score" style="color:var(--retro-gold)">₩ 0</span>
         </div>
         <div class="stat-line">
@@ -132,7 +152,6 @@
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3'); 
 
-    // 이미지 경로 (전달해주신 파일명)
     const imgRose = new Image(); imgRose.src = '1775988220732(2).png';
     const imgMiss = new Image(); imgMiss.src = '1775988220732(3).png';
     const imgRealBill = new Image(); imgRealBill.src = '1775986100725.png';
@@ -150,9 +169,17 @@
 
     function initGame() {
         document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-view').style.display = 'flex';
         resize();
         startGame();
+    }
+
+    function resetGame() {
+        // 모든 변수 초기화 후 시작
+        score = 0; life = 0;
+        updateUI();
+        initGame();
     }
 
     function resize() {
@@ -161,8 +188,9 @@
     }
 
     function startGame() {
-        isPlaying = true; score = 0; life = 0;
+        isPlaying = true;
         notes = rawData.map(n => ({...n, hit: false, type: Math.random() < 0.2 ? 'FAKE' : 'REAL'}));
+        audio.currentTime = 0;
         audio.play();
         requestAnimationFrame(gameLoop);
     }
@@ -174,36 +202,50 @@
         
         if(note) {
             note.hit = true;
+            const diff = Math.abs(note.time - now);
             comboEffect = { lane: lane, timer: 15 };
+
             if(note.type === 'REAL') {
-                score += 10000; shake = 12; state = 'HIT';
-                setJudge("COOL!!", "#00f2ff");
+                state = 'HIT';
+                if(diff < 60) { score += 15000; shake = 15; setJudge("PERFECT!", "#ffd700"); }
+                else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
+                else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
             } else {
-                life += 25; shake = 25; state = 'PANIC';
-                setJudge("BAD!", "#ff3e3e");
+                life += 30; shake = 30; state = 'PANIC';
+                setJudge("FAKE!!", "#ff3e3e");
             }
             updateUI();
-            setTimeout(() => state = 'IDLE', 400);
+            setTimeout(() => state = 'IDLE', 450);
         }
     }
 
     function setJudge(txt, col) {
         const tag = document.getElementById('judge-tag');
         tag.innerText = txt; tag.style.color = col;
-        setTimeout(() => { if(tag.innerText === txt) tag.innerText = ''; }, 400);
+        setTimeout(() => { if(tag.innerText === txt) tag.innerText = ''; }, 500);
     }
 
     function updateUI() {
         document.getElementById('score').innerText = '₩' + score.toLocaleString();
         document.getElementById('sus-fill').style.width = life + '%';
-        if(life >= 100) { isPlaying = false; audio.pause(); alert("GAMEOVER - BUSTED!"); location.reload(); }
+        
+        if(life >= 100 && isPlaying) { 
+            endGame();
+        }
+    }
+
+    function endGame() {
+        isPlaying = false;
+        audio.pause();
+        document.getElementById('final-score').innerText = '₩' + score.toLocaleString();
+        document.getElementById('result-screen').style.display = 'flex';
     }
 
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
-        const cy = canvas.height * 0.85;
-        const bounce = Math.sin(frame * 0.3) * 8;
-        const jump = (state === 'HIT') ? -40 : 0;
+        const cy = canvas.height * 0.82;
+        const bounce = Math.sin(frame * 0.3) * 6;
+        const jump = (state === 'HIT') ? -45 : 0;
 
         const charW = 100; const charH = 120;
         ctx.save();
@@ -212,7 +254,7 @@
         if (state === 'HIT') {
             if (imgMiss.complete) ctx.drawImage(imgMiss, -charW/2, -charH + 20, charW, charH);
         } else {
-            if (state === 'PANIC') ctx.filter = 'invert(0.5) sepia(1) saturate(5) hue-rotate(-50deg)';
+            if (state === 'PANIC') ctx.filter = 'contrast(2) sepia(1) hue-rotate(-50deg)';
             if (imgRose.complete) ctx.drawImage(imgRose, -charW/2, -charH + 20, charW, charH);
             ctx.filter = 'none';
         }
@@ -224,11 +266,8 @@
         const x = (n.lane - 1) * laneW + 15;
         const w = laneW - 30;
         const h = 55;
-
         const targetImg = (n.type === 'REAL') ? imgRealBill : imgFakeBill;
-        if (targetImg.complete) {
-            ctx.drawImage(targetImg, x, y, w, h);
-        }
+        if (targetImg.complete) ctx.drawImage(targetImg, x, y, w, h);
     }
 
     function gameLoop() {
@@ -244,16 +283,8 @@
         ctx.clearRect(-50, -50, canvas.width+100, canvas.height+100);
         
         const now = audio.currentTime * 1000;
-        const judgeLineY = canvas.height * 0.82;
+        const judgeLineY = canvas.height * 0.8;
 
-        // 레인 구분선 (도트 느낌)
-        ctx.strokeStyle = '#222'; ctx.setLineDash([5, 5]);
-        for(let i=1; i<3; i++) {
-            ctx.beginPath(); ctx.moveTo(i*canvas.width/3, 0); ctx.lineTo(i*canvas.width/3, canvas.height); ctx.stroke();
-        }
-        ctx.setLineDash([]);
-
-        // 판정 이펙트
         if(comboEffect.timer > 0) {
             ctx.fillStyle = `rgba(255, 255, 255, ${comboEffect.timer / 20})`;
             ctx.fillRect((comboEffect.lane-1)*(canvas.width/3), 0, canvas.width/3, canvas.height);
@@ -262,9 +293,12 @@
 
         notes.forEach(n => {
             if(n.hit) return;
-            let ny = judgeLineY - (n.time - now) * 0.7; // 속도 약간 상향
+            let ny = judgeLineY - (n.time - now) * 0.75;
             if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
-            if(ny > judgeLineY + 60) { n.hit = true; if(n.type === 'REAL') { life += 5; updateUI(); } }
+            if(ny > judgeLineY + 50) { 
+                n.hit = true; 
+                if(n.type === 'REAL') { life += 8; updateUI(); setJudge("MISS", "#666"); }
+            }
         });
 
         drawCharacter(ctx);
