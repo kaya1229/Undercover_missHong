@@ -195,13 +195,24 @@
     }
 
     function startGame() {
-        isPlaying = true;
-        score = 0; life = 0; editedNotes = [];
-        notes = rawData.map(n => ({...n, hit: false, type: n.type || (Math.random() < 0.2 ? 'FAKE' : 'REAL')}));
-        audio.currentTime = 0;
-        audio.play();
-        requestAnimationFrame(gameLoop);
-    }
+    isPlaying = true;
+    score = 0; life = 0; editedNotes = [];
+    
+    // 수정된 로직: 에디터 모드가 아닐 때만 20% 확률로 FAKE 지폐를 섞음
+    notes = rawData.map(n => {
+        let finalType = n.type;
+        if(!isEditorMode) {
+            // 기존 type이 있더라도 20% 확률로 FAKE로 변환 (원치 않으시면 n.type || ... 로 유지)
+            finalType = Math.random() < 0.2 ? 'FAKE' : 'REAL';
+        }
+        return {...n, hit: false, type: finalType};
+    });
+    
+    audio.currentTime = 0;
+    audio.play();
+    requestAnimationFrame(gameLoop);
+}
+
 
     function handlePress(lane) {
         if(!isPlaying) return;
