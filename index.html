@@ -14,6 +14,7 @@
             --retro-red: #e74c3c;
             --retro-blue: #3498db;
             --retro-gold: #f1c40f;
+            --retro-purple: #9b59b6;
         }
 
         * {
@@ -39,32 +40,33 @@
             z-index: 200; pointer-events: none;
         }
 
-        /* 공통 화면 스타일 */
         .overlay-screen {
             position: absolute; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             background: var(--pixel-black); z-index: 100;
         }
 
-        /* 결과 화면 전용 */
         #result-screen { display: none; background: rgba(8, 24, 32, 0.95); }
 
         .pixel-box {
-            padding: 30px; border: 6px solid var(--pixel-white);
+            padding: 20px; border: 6px solid var(--pixel-white);
             background: var(--pixel-bg); text-align: center;
             box-shadow: 10px 10px 0px var(--pixel-black);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .primary-btn {
-            padding: 20px 30px; background: var(--pixel-white); color: var(--pixel-black);
+            width: 240px; padding: 18px; margin: 10px;
+            background: var(--pixel-white); color: var(--pixel-black);
             border: 6px solid var(--retro-blue); font-family: 'Press Start 2P';
             font-size: 12px; cursor: pointer;
             box-shadow: 6px 6px 0px var(--retro-blue);
-            touch-action: manipulation;
         }
 
         .primary-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px var(--retro-blue); }
+        
+        /* 에디터 버튼 전용 스타일 */
+        .editor-btn { background: var(--pixel-bg); color: var(--pixel-white); border-color: var(--retro-purple); box-shadow: 6px 6px 0px var(--retro-purple); }
 
         #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
 
@@ -93,46 +95,39 @@
             border: 4px solid #fff; border-bottom-width: 8px; border-right-width: 8px;
             display: flex; justify-content: center; align-items: center;
             color: #fff; font-size: 24px; text-shadow: 2px 2px #000;
-            touch-action: manipulation;
-        }
-
-        .retro-btn:active {
-            transform: translate(4px, 4px);
-            border-bottom-width: 4px; border-right-width: 4px;
-            background: var(--retro-red);
         }
 
         #judge-tag {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             font-size: 18px; z-index: 10; pointer-events: none; text-align: center;
-            text-shadow: 2px 2px #000;
         }
     </style>
 </head>
 <body>
 
 <div id="intro-screen" class="overlay-screen">
-    <h1 style="color:var(--retro-red); text-align:center; font-size: 20px; line-height: 1.5;">MISS HONG<br><span style="color:#fff">1980</span></h1>
-    <button class="primary-btn" onclick="initGame()">INSERT COIN</button>
+    <h1 style="color:var(--retro-red); text-align:center; font-size: 20px; line-height: 1.5; margin-bottom: 40px;">MISS HONG<br><span style="color:#fff">1980</span></h1>
+    <button class="primary-btn" onclick="initGame(false)">INSERT COIN</button>
+    <button class="primary-btn editor-btn" onclick="initGame(true)">EDITOR MODE</button>
 </div>
 
 <div id="result-screen" class="overlay-screen">
     <div class="pixel-box">
-        <p style="color:var(--retro-red); margin-bottom: 20px;">BUSTED!</p>
-        <p style="font-size: 10px; margin-bottom: 10px;">TOTAL COLLECTED:</p>
+        <p id="result-title" style="color:var(--retro-red); margin-bottom: 20px;">BUSTED!</p>
+        <p id="result-desc" style="font-size: 10px; margin-bottom: 10px;">TOTAL COLLECTED:</p>
         <p id="final-score" style="color:var(--retro-gold); font-size: 18px;">₩ 0</p>
     </div>
-    <button class="primary-btn" onclick="resetGame()">RETRY</button>
+    <button class="primary-btn" onclick="resetToHome()">GO HOME</button>
 </div>
 
 <div id="game-view">
     <div id="scoreboard">
         <div class="stat-line">
-            <span>COLLECTED</span>
+            <span id="label-score">CASH</span>
             <span id="score" style="color:var(--retro-gold)">₩ 0</span>
         </div>
         <div class="stat-line">
-            <span>SUSPICION</span>
+            <span id="label-life">SUSPICION</span>
             <div class="bar-bg"><div id="sus-fill"></div></div>
         </div>
     </div>
@@ -152,34 +147,45 @@
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3'); 
 
-    const imgRose = new Image(); imgRose.src = '1775988220732(2).png';
-    const imgMiss = new Image(); imgMiss.src = '1775988220732(3).png';
+    const imgRose = new Image(); imgRose.src = '17759888220732(2).png';
+    const imgMiss = new Image(); imgMiss.src = '17759888220732(3).png';
     const imgRealBill = new Image(); imgRealBill.src = '1775986100725.png';
     const imgFakeBill = new Image(); imgFakeBill.src = '1775986746405.png';
     
     let isPlaying = false;
+    let isEditorMode = false;
+    let editedNotes = [];
     let score = 0, life = 0;
     let notes = [];
     let state = 'IDLE'; 
-    let shake = 0;
+    let shake = 0, frame = 0;
     let comboEffect = { lane: 0, timer: 0 };
-    let frame = 0;
 
-    const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"},{"time":18368,"lane":3,"type":"REAL"},{"time":19102,"lane":2,"type":"REAL"},{"time":20005,"lane":2,"type":"REAL"},{"time":20956,"lane":2,"type":"REAL"},{"time":21869,"lane":1,"type":"REAL"},{"time":22606,"lane":3,"type":"REAL"},{"time":23948,"lane":1,"type":"REAL"},{"time":24970,"lane":2,"type":"REAL"},{"time":26147,"lane":3,"type":"REAL"},{"time":27642,"lane":1,"type":"REAL"},{"time":28654,"lane":2,"type":"REAL"},{"time":29513,"lane":3,"type":"REAL"},{"time":30880,"lane":2,"type":"REAL"},{"time":32195,"lane":3,"type":"REAL"},{"time":33701,"lane":1,"type":"REAL"},{"time":34772,"lane":3,"type":"REAL"},{"time":35731,"lane":2,"type":"REAL"},{"time":36732,"lane":1,"type":"REAL"},{"time":38231,"lane":3,"type":"REAL"},{"time":39789,"lane":3,"type":"REAL"},{"time":40735,"lane":2,"type":"REAL"},{"time":42165,"lane":1,"type":"REAL"},{"time":43166,"lane":2,"type":"REAL"},{"time":44617,"lane":1,"type":"REAL"},{"time":45780,"lane":3,"type":"REAL"},{"time":46812,"lane":1,"type":"REAL"},{"time":47802,"lane":2,"type":"REAL"},{"time":48830,"lane":3,"type":"REAL"}];
+    // 기존 데이터
+    const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"}];
 
-    function initGame() {
+    function initGame(editor) {
+        isEditorMode = editor;
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-view').style.display = 'flex';
+        
+        // 에디터 모드 전용 UI 변경
+        if(isEditorMode) {
+            document.getElementById('label-score').innerText = "EDITOR";
+            document.getElementById('score').innerText = "RECORDING";
+            document.getElementById('label-life').innerText = "STATUS";
+        } else {
+            document.getElementById('label-score').innerText = "CASH";
+            document.getElementById('label-life').innerText = "SUSPICION";
+        }
+
         resize();
         startGame();
     }
 
-    function resetGame() {
-        // 모든 변수 초기화 후 시작
-        score = 0; life = 0;
-        updateUI();
-        initGame();
+    function resetToHome() {
+        location.reload();
     }
 
     function resize() {
@@ -189,7 +195,8 @@
 
     function startGame() {
         isPlaying = true;
-        notes = rawData.map(n => ({...n, hit: false, type: Math.random() < 0.2 ? 'FAKE' : 'REAL'}));
+        score = 0; life = 0; editedNotes = [];
+        notes = isEditorMode ? [] : rawData.map(n => ({...n, hit: false, type: Math.random() < 0.2 ? 'FAKE' : 'REAL'}));
         audio.currentTime = 0;
         audio.play();
         requestAnimationFrame(gameLoop);
@@ -197,22 +204,29 @@
 
     function handlePress(lane) {
         if(!isPlaying) return;
-        const now = audio.currentTime * 1000;
+        const now = Math.floor(audio.currentTime * 1000);
+
+        if(isEditorMode) {
+            const noteData = { time: now, lane: lane, type: "REAL" };
+            editedNotes.push(noteData);
+            console.log(JSON.stringify(noteData) + ",");
+            comboEffect = { lane: lane, timer: 12 };
+            setJudge("REC", "#9b59b6");
+            return;
+        }
+
         const note = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - now) < 200);
-        
         if(note) {
             note.hit = true;
             const diff = Math.abs(note.time - now);
             comboEffect = { lane: lane, timer: 15 };
-
             if(note.type === 'REAL') {
                 state = 'HIT';
-                if(diff < 60) { score += 15000; shake = 15; setJudge("PERFECT!", "#ffd700"); }
-                else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
-                else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
+                if(diff < 60) { score += 15000; setJudge("PERFECT!", "#ffd700"); }
+                else if(diff < 120) { score += 10000; setJudge("GREAT!", "#00f2ff"); }
+                else { score += 5000; setJudge("GOOD", "#ffffff"); }
             } else {
-                life += 30; shake = 30; state = 'PANIC';
-                setJudge("FAKE!!", "#ff3e3e");
+                life += 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
             }
             updateUI();
             setTimeout(() => state = 'IDLE', 450);
@@ -226,18 +240,29 @@
     }
 
     function updateUI() {
-        document.getElementById('score').innerText = '₩' + score.toLocaleString();
-        document.getElementById('sus-fill').style.width = life + '%';
-        
-        if(life >= 100 && isPlaying) { 
-            endGame();
+        if(!isEditorMode) {
+            document.getElementById('score').innerText = '₩' + score.toLocaleString();
+            document.getElementById('sus-fill').style.width = life + '%';
+            if(life >= 100 && isPlaying) endGame();
         }
     }
 
     function endGame() {
         isPlaying = false;
         audio.pause();
-        document.getElementById('final-score').innerText = '₩' + score.toLocaleString();
+        
+        if(isEditorMode) {
+            document.getElementById('result-title').innerText = "DONE!";
+            document.getElementById('result-title').style.color = "var(--retro-purple)";
+            document.getElementById('result-desc').innerText = "CHECK CONSOLE (F12)";
+            document.getElementById('final-score').innerText = editedNotes.length + " NOTES";
+            console.log("--- COPY THIS DATA ---");
+            console.log(JSON.stringify(editedNotes));
+        } else {
+            document.getElementById('result-title').innerText = "BUSTED!";
+            document.getElementById('result-desc').innerText = "TOTAL COLLECTED:";
+            document.getElementById('final-score').innerText = '₩' + score.toLocaleString();
+        }
         document.getElementById('result-screen').style.display = 'flex';
     }
 
@@ -246,11 +271,9 @@
         const cy = canvas.height * 0.82;
         const bounce = Math.sin(frame * 0.3) * 6;
         const jump = (state === 'HIT') ? -45 : 0;
-
         const charW = 100; const charH = 120;
         ctx.save();
         ctx.translate(cx, cy + bounce + jump);
-
         if (state === 'HIT') {
             if (imgMiss.complete) ctx.drawImage(imgMiss, -charW/2, -charH + 20, charW, charH);
         } else {
@@ -273,7 +296,8 @@
     function gameLoop() {
         if(!isPlaying) return;
         frame++;
-        
+        if(audio.ended) { endGame(); return; }
+
         let sx = (Math.random() - 0.5) * shake;
         let sy = (Math.random() - 0.5) * shake;
         if(shake > 0) shake *= 0.8;
@@ -285,21 +309,30 @@
         const now = audio.currentTime * 1000;
         const judgeLineY = canvas.height * 0.8;
 
+        // 판정 가이드라인
+        ctx.strokeStyle = isEditorMode ? 'var(--retro-purple)' : '#333';
+        ctx.lineWidth = isEditorMode ? 4 : 2;
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath(); ctx.moveTo(0, judgeLineY); ctx.lineTo(canvas.width, judgeLineY); ctx.stroke();
+        ctx.setLineDash([]);
+
         if(comboEffect.timer > 0) {
             ctx.fillStyle = `rgba(255, 255, 255, ${comboEffect.timer / 20})`;
             ctx.fillRect((comboEffect.lane-1)*(canvas.width/3), 0, canvas.width/3, canvas.height);
             comboEffect.timer--;
         }
 
-        notes.forEach(n => {
-            if(n.hit) return;
-            let ny = judgeLineY - (n.time - now) * 0.75;
-            if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
-            if(ny > judgeLineY + 50) { 
-                n.hit = true; 
-                if(n.type === 'REAL') { life += 8; updateUI(); setJudge("MISS", "#666"); }
-            }
-        });
+        if(!isEditorMode) {
+            notes.forEach(n => {
+                if(n.hit) return;
+                let ny = judgeLineY - (n.time - now) * 0.75;
+                if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
+                if(ny > judgeLineY + 50) { 
+                    n.hit = true; 
+                    if(n.type === 'REAL') { life += 8; updateUI(); setJudge("MISS", "#666"); }
+                }
+            });
+        }
 
         drawCharacter(ctx);
         ctx.restore();
