@@ -2,30 +2,30 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>언더커버 미쓰홍: 개발 툴킷</title>
+    <title>언더커버 미쓰홍: 비자금 디펜스</title>
     <style>
-        :root { --bg: #f5f5dc; --panel: #dcdcae; --accent: #333; }
+        :root { --bg: #f5f5dc; --panel: #dcdcae; --accent: #333; --gold: #FFD700; }
         body { background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; }
-        #game-container { position: relative; width: 700px; height: 850px; background: #222; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 8px solid var(--accent); border-radius: 10px; }
-        #game-canvas { width: 66.6%; height: 100%; background: #1a1a1a; border-right: 4px solid var(--accent); }
-        #ui-side { width: 33.3%; height: 100%; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; background: var(--panel); }
+        #game-container { position: relative; width: 800px; height: 900px; background: #222; display: flex; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 8px solid var(--accent); border-radius: 10px; }
+        #game-canvas { width: 62.5%; height: 100%; background: #1a1a1a; border-right: 4px solid var(--accent); }
+        #ui-side { width: 37.5%; height: 100%; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; background: var(--panel); }
         
-        .mode-indicator { font-size: 24px; font-weight: 900; text-align: center; padding: 10px; margin-bottom: 20px; border: 2px solid var(--accent); }
+        .mode-indicator { font-size: 24px; font-weight: 900; text-align: center; padding: 12px; margin-bottom: 20px; border: 2px solid var(--accent); border-radius: 5px; }
         .MODE-EDIT { background: #ffeb3b; color: #000; }
         .MODE-PLAY { background: #4caf50; color: #fff; }
 
-        .stat-box { background: rgba(255,255,255,0.5); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-family: monospace; }
-        .btn { padding: 12px; background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 8px; font-weight: bold; transition: 0.2s; }
+        .stat-box { background: rgba(255,255,255,0.6); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; border: 1px solid rgba(0,0,0,0.1); }
+        .btn { padding: 15px; background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 10px; font-weight: bold; transition: 0.2s; border-radius: 5px; }
         .btn:hover { opacity: 0.8; transform: translateY(-2px); }
-        .btn-toggle { background: #5c5c5c; margin-bottom: 20px; }
+        .btn-toggle { background: #5c5c5c; margin-bottom: 25px; }
         
-        #judge-display { font-size: 28px; font-weight: bold; text-align: center; height: 40px; margin-top: 20px; color: #d32f2f; }
+        #judge-display { font-size: 36px; font-weight: bold; text-align: center; height: 50px; margin-top: 20px; color: #d32f2f; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <canvas id="game-canvas" width="450" height="850"></canvas>
+    <canvas id="game-canvas" width="500" height="900"></canvas>
     
     <div id="ui-side">
         <div id="modeTag" class="mode-indicator MODE-EDIT">EDITOR</div>
@@ -38,9 +38,11 @@
         </div>
 
         <div id="playStats" style="display:none;">
-            <div class="stat-box">
-                CASH: $<span id="score">0</span><br>
-                REMAINING: <span id="life">100</span>%
+            <div class="stat-box" style="color: green; font-weight: bold;">
+                CASH: $<span id="score">0</span>
+            </div>
+            <div class="stat-box" style="color: red;">
+                SUSPICION: <span id="life">0</span>%
             </div>
             <div id="judge-display"></div>
         </div>
@@ -49,8 +51,8 @@
         <button class="btn" onclick="exportData()">JSON 데이터 복사</button>
         <button class="btn" onclick="clearNotes()" style="background:#d32f2f;">노트 초기화</button>
         
-        <p style="font-size: 11px; margin-top: auto; color: #555;">
-            [1, 2, 3] 키: 노트 입력<br>
+        <p style="font-size: 11px; margin-top: auto; color: #555; line-height: 1.4;">
+            [1, 2, 3, 4, 5] 키: 노트 입력<br>
             [Tab]: 에디터 <-> 플레이 전환<br>
             [Space]: 음악 재생/정지
         </p>
@@ -61,18 +63,33 @@
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     const audio = new Audio('dance_tonight.mp3');
-
-   let currentMode = 'EDIT'; 
+    
+    let currentMode = 'EDIT'; 
     let notes = []; 
     let score = 0;
-    let life = 100;
+    let life = 0; // 의심도 (0%에서 시작, 100%면 게임오버)
+    let characterState = 'IDLE'; // IDLE, HIT, MISS
 
-    // 대괄호 하나를 제거하여 올바른 배열 구조로 수정했습니다.
-    const initialData = [{"time":601,"lane":1,"type":"REAL"},{"time":892,"lane":1,"type":"REAL"},{"time":2456,"lane":1,"type":"REAL"},{"time":2775,"lane":1,"type":"REAL"},{"time":3446,"lane":2,"type":"REAL"},{"time":3705,"lane":3,"type":"REAL"},{"time":3892,"lane":1,"type":"REAL"},{"time":4481,"lane":2,"type":"REAL"},{"time":4814,"lane":2,"type":"REAL"},{"time":6508,"lane":3,"type":"REAL"},{"time":6814,"lane":3,"type":"REAL"},{"time":8477,"lane":1,"type":"REAL"},{"time":8855,"lane":1,"type":"REAL"},{"time":9329,"lane":2,"type":"REAL"},{"time":9648,"lane":2,"type":"REAL"},{"time":10502,"lane":3,"type":"REAL"},{"time":10867,"lane":3,"type":"REAL"},{"time":12518,"lane":1,"type":"REAL"},{"time":12930,"lane":2,"type":"REAL"},{"time":14529,"lane":1,"type":"REAL"},{"time":14869,"lane":2,"type":"REAL"},{"time":15291,"lane":1,"type":"REAL"},{"time":15891,"lane":1,"type":"REAL"},{"time":16279,"lane":1,"type":"REAL"},{"time":17559,"lane":1,"type":"REAL"},{"time":17714,"lane":2,"type":"REAL"},{"time":18004,"lane":3,"type":"REAL"},{"time":19586,"lane":1,"type":"REAL"},{"time":19969,"lane":1,"type":"REAL"},{"time":20304,"lane":2,"type":"REAL"},{"time":21594,"lane":3,"type":"REAL"},{"time":21806,"lane":2,"type":"REAL"},{"time":22087,"lane":1,"type":"REAL"},{"time":23886,"lane":1,"type":"REAL"},{"time":24109,"lane":2,"type":"REAL"},{"time":24372,"lane":3,"type":"REAL"},{"time":24559,"lane":2,"type":"REAL"},{"time":24928,"lane":2,"type":"REAL"},{"time":25059,"lane":2,"type":"REAL"},{"time":26193,"lane":3,"type":"REAL"},{"time":26821,"lane":1,"type":"REAL"},{"time":27655,"lane":1,"type":"REAL"},{"time":27830,"lane":2,"type":"REAL"},{"time":28153,"lane":3,"type":"REAL"},{"time":29683,"lane":1,"type":"REAL"},{"time":29907,"lane":2,"type":"REAL"},{"time":30164,"lane":3,"type":"REAL"},{"time":30863,"lane":2,"type":"REAL"},{"time":31678,"lane":1,"type":"REAL"},{"time":31888,"lane":2,"type":"REAL"},{"time":32199,"lane":3,"type":"REAL"},{"time":32669,"lane":2,"type":"REAL"},{"time":33159,"lane":2,"type":"REAL"},{"time":33706,"lane":3,"type":"REAL"},{"time":34200,"lane":3,"type":"REAL"},{"time":34682,"lane":1,"type":"REAL"},{"time":35134,"lane":1,"type":"REAL"},{"time":35639,"lane":2,"type":"REAL"},{"time":36092,"lane":2,"type":"REAL"},{"time":36705,"lane":3,"type":"REAL"},{"time":37202,"lane":3,"type":"REAL"},{"time":37719,"lane":3,"type":"REAL"},{"time":38201,"lane":3,"type":"REAL"},{"time":38648,"lane":1,"type":"REAL"},{"time":39047,"lane":1,"type":"REAL"},{"time":39650,"lane":1,"type":"REAL"},{"time":40164,"lane":1,"type":"REAL"},{"time":40791,"lane":1,"type":"REAL"},{"time":41161,"lane":1,"type":"REAL"},{"time":41662,"lane":2,"type":"REAL"},{"time":42077,"lane":2,"type":"REAL"},{"time":42476,"lane":3,"type":"REAL"},{"time":43513,"lane":1,"type":"REAL"},{"time":43757,"lane":2,"type":"REAL"},{"time":44174,"lane":3,"type":"REAL"},{"time":44514,"lane":1,"type":"REAL"},{"time":44659,"lane":2,"type":"REAL"},{"time":44779,"lane":3,"type":"REAL"},{"time":45533,"lane":1,"type":"REAL"},{"time":45643,"lane":2,"type":"REAL"},{"time":45717,"lane":3,"type":"REAL"},{"time":46725,"lane":1,"type":"REAL"},{"time":46830,"lane":2,"type":"REAL"},{"time":46911,"lane":3,"type":"REAL"},{"time":47685,"lane":1,"type":"REAL"},{"time":47804,"lane":2,"type":"REAL"},{"time":47906,"lane":3,"type":"REAL"},{"time":48751,"lane":1,"type":"REAL"},{"time":51029,"lane":1,"type":"REAL"},{"time":51313,"lane":2,"type":"REAL"},{"time":51589,"lane":3,"type":"REAL"},{"time":51837,"lane":1,"type":"REAL"},{"time":52315,"lane":2,"type":"REAL"},{"time":52640,"lane":3,"type":"REAL"},{"time":52866,"lane":2,"type":"REAL"},{"time":53222,"lane":3,"type":"REAL"},{"time":53789,"lane":1,"type":"REAL"},{"time":54296,"lane":1,"type":"REAL"},{"time":54883,"lane":1,"type":"REAL"},{"time":55183,"lane":1,"type":"REAL"},{"time":55283,"lane":1,"type":"REAL"},{"time":55571,"lane":1,"type":"REAL"},{"time":55825,"lane":1,"type":"REAL"},{"time":56641,"lane":3,"type":"REAL"},{"time":57155,"lane":2,"type":"REAL"},{"time":58867,"lane":1,"type":"REAL"},{"time":59116,"lane":2,"type":"REAL"},{"time":59295,"lane":3,"type":"REAL"},{"time":59663,"lane":2,"type":"REAL"},{"time":59942,"lane":2,"type":"REAL"},{"time":60380,"lane":2,"type":"REAL"},{"time":60587,"lane":2,"type":"REAL"},{"time":61730,"lane":1,"type":"REAL"},{"time":62607,"lane":3,"type":"REAL"},{"time":63636,"lane":2,"type":"REAL"},{"time":64965,"lane":3,"type":"REAL"},{"time":67148,"lane":1,"type":"REAL"},{"time":67438,"lane":2,"type":"REAL"},{"time":67726,"lane":3,"type":"REAL"},{"time":67975,"lane":2,"type":"REAL"},{"time":68470,"lane":3,"type":"REAL"},{"time":68681,"lane":2,"type":"REAL"},{"time":69009,"lane":1,"type":"REAL"},{"time":70992,"lane":1,"type":"REAL"},{"time":71225,"lane":2,"type":"REAL"},{"time":71388,"lane":3,"type":"REAL"},{"time":71740,"lane":2,"type":"REAL"},{"time":72017,"lane":1,"type":"REAL"},{"time":72462,"lane":2,"type":"REAL"},{"time":72978,"lane":3,"type":"REAL"},{"time":73478,"lane":3,"type":"REAL"},{"time":73986,"lane":3,"type":"REAL"},{"time":74387,"lane":3,"type":"REAL"},{"time":74983,"lane":2,"type":"REAL"},{"time":75393,"lane":1,"type":"REAL"},{"time":76540,"lane":3,"type":"REAL"},{"time":76730,"lane":2,"type":"REAL"},{"time":77530,"lane":3,"type":"REAL"},{"time":77795,"lane":2,"type":"REAL"},{"time":78552,"lane":3,"type":"REAL"},{"time":78805,"lane":1,"type":"REAL"},{"time":79310,"lane":1,"type":"REAL"},{"time":79348,"lane":1,"type":"REAL"},{"time":79379,"lane":1,"type":"REAL"},{"time":79412,"lane":1,"type":"REAL"},{"time":79441,"lane":1,"type":"REAL"},{"time":79481,"lane":1,"type":"REAL"},{"time":79512,"lane":1,"type":"REAL"},{"time":79538,"lane":1,"type":"REAL"},{"time":79574,"lane":1,"type":"REAL"},{"time":79601,"lane":1,"type":"REAL"},{"time":79642,"lane":1,"type":"REAL"},{"time":79664,"lane":1,"type":"REAL"},{"time":79703,"lane":1,"type":"REAL"},{"time":79732,"lane":1,"type":"REAL"},{"time":79766,"lane":1,"type":"REAL"},{"time":79794,"lane":1,"type":"REAL"},{"time":79829,"lane":1,"type":"REAL"},{"time":79868,"lane":1,"type":"REAL"},{"time":79900,"lane":1,"type":"REAL"},{"time":79932,"lane":1,"type":"REAL"},{"time":79958,"lane":1,"type":"REAL"},{"time":79999,"lane":1,"type":"REAL"},{"time":80023,"lane":1,"type":"REAL"},{"time":80062,"lane":1,"type":"REAL"},{"time":80092,"lane":1,"type":"REAL"},{"time":80123,"lane":1,"type":"REAL"},{"time":80150,"lane":1,"type":"REAL"},{"time":80185,"lane":1,"type":"REAL"},{"time":80225,"lane":1,"type":"REAL"},{"time":80249,"lane":1,"type":"REAL"},{"time":80286,"lane":1,"type":"REAL"},{"time":80314,"lane":1,"type":"REAL"},{"time":80348,"lane":1,"type":"REAL"},{"time":80377,"lane":1,"type":"REAL"},{"time":80412,"lane":1,"type":"REAL"},{"time":80452,"lane":1,"type":"REAL"},{"time":80484,"lane":1,"type":"REAL"},{"time":80813,"lane":2,"type":"REAL"},{"time":81014,"lane":3,"type":"REAL"},{"time":85136,"lane":1,"type":"REAL"},{"time":85510,"lane":1,"type":"REAL"},{"time":86133,"lane":2,"type":"REAL"},{"time":86627,"lane":2,"type":"REAL"},{"time":87161,"lane":3,"type":"REAL"},{"time":87511,"lane":3,"type":"REAL"},{"time":88117,"lane":1,"type":"REAL"},{"time":88674,"lane":1,"type":"REAL"},{"time":88998,"lane":1,"type":"REAL"},{"time":89449,"lane":2,"type":"REAL"},{"time":90620,"lane":1,"type":"REAL"},{"time":90929,"lane":2,"type":"REAL"},{"time":91032,"lane":3,"type":"REAL"},{"time":92684,"lane":2,"type":"REAL"},{"time":92972,"lane":2,"type":"REAL"},{"time":93142,"lane":2,"type":"REAL"},{"time":93468,"lane":3,"type":"REAL"},{"time":94668,"lane":1,"type":"REAL"},{"time":95012,"lane":2,"type":"REAL"},{"time":95098,"lane":3,"type":"REAL"},{"time":96725,"lane":1,"type":"REAL"},{"time":97054,"lane":2,"type":"REAL"},{"time":97173,"lane":3,"type":"REAL"},{"time":97519,"lane":1,"type":"REAL"},{"time":98396,"lane":2,"type":"REAL"},{"time":98718,"lane":3,"type":"REAL"},{"time":98988,"lane":2,"type":"REAL"},{"time":99134,"lane":1,"type":"REAL"},{"time":100446,"lane":1,"type":"REAL"},{"time":100956,"lane":2,"type":"REAL"},{"time":101192,"lane":2,"type":"REAL"},{"time":101714,"lane":3,"type":"REAL"},{"time":102201,"lane":1,"type":"REAL"},{"time":102728,"lane":2,"type":"REAL"},{"time":103003,"lane":2,"type":"REAL"},{"time":105267,"lane":3,"type":"REAL"},{"time":105697,"lane":3,"type":"REAL"},{"time":106242,"lane":2,"type":"REAL"},{"time":106838,"lane":2,"type":"REAL"},{"time":107326,"lane":1,"type":"REAL"},{"time":107717,"lane":1,"type":"REAL"},{"time":108221,"lane":2,"type":"REAL"},{"time":108712,"lane":2,"type":"REAL"},{"time":109248,"lane":3,"type":"REAL"},{"time":109728,"lane":3,"type":"REAL"},{"time":110283,"lane":3,"type":"REAL"},{"time":110784,"lane":3,"type":"REAL"},{"time":111309,"lane":1,"type":"REAL"},{"time":111650,"lane":1,"type":"REAL"},{"time":112128,"lane":1,"type":"REAL"},{"time":112359,"lane":1,"type":"REAL"},{"time":112786,"lane":2,"type":"REAL"},{"time":113322,"lane":3,"type":"REAL"},{"time":113750,"lane":3,"type":"REAL"},{"time":114361,"lane":2,"type":"REAL"},{"time":114740,"lane":1,"type":"REAL"},{"time":115074,"lane":2,"type":"REAL"},{"time":115382,"lane":3,"type":"REAL"},{"time":115853,"lane":2,"type":"REAL"},{"time":116345,"lane":1,"type":"REAL"},{"time":116762,"lane":1,"type":"REAL"},{"time":117109,"lane":2,"type":"REAL"},{"time":117377,"lane":2,"type":"REAL"},{"time":117874,"lane":2,"type":"REAL"},{"time":117918,"lane":2,"type":"REAL"},{"time":117948,"lane":2,"type":"REAL"},{"time":118347,"lane":3,"type":"REAL"},{"time":118879,"lane":3,"type":"REAL"},{"time":119380,"lane":1,"type":"REAL"},{"time":119723,"lane":1,"type":"REAL"},{"time":120362,"lane":1,"type":"REAL"},{"time":120859,"lane":1,"type":"REAL"},{"time":120895,"lane":1,"type":"REAL"},{"time":120923,"lane":1,"type":"REAL"},{"time":121386,"lane":1,"type":"REAL"},{"time":123590,"lane":1,"type":"REAL"},{"time":123881,"lane":2,"type":"REAL"},{"time":124175,"lane":3,"type":"REAL"},{"time":124428,"lane":1,"type":"REAL"},{"time":124921,"lane":2,"type":"REAL"},{"time":125237,"lane":3,"type":"REAL"},{"time":125491,"lane":2,"type":"REAL"},{"time":125883,"lane":2,"type":"REAL"},{"time":127428,"lane":1,"type":"REAL"},{"time":127706,"lane":2,"type":"REAL"},{"time":127805,"lane":3,"type":"REAL"},{"time":128196,"lane":1,"type":"REAL"},{"time":128440,"lane":2,"type":"REAL"},{"time":128954,"lane":3,"type":"REAL"},{"time":129218,"lane":2,"type":"REAL"},{"time":131464,"lane":3,"type":"REAL"},{"time":131744,"lane":2,"type":"REAL"},{"time":131901,"lane":1,"type":"REAL"},{"time":132435,"lane":1,"type":"REAL"},{"time":132953,"lane":2,"type":"REAL"},{"time":133266,"lane":3,"type":"REAL"},{"time":133499,"lane":2,"type":"REAL"},{"time":134232,"lane":1,"type":"REAL"},{"time":135242,"lane":1,"type":"REAL"},{"time":136286,"lane":1,"type":"REAL"},{"time":137385,"lane":1,"type":"REAL"},{"time":137551,"lane":2,"type":"REAL"},{"time":139847,"lane":1,"type":"REAL"},{"time":140013,"lane":2,"type":"REAL"},{"time":140312,"lane":3,"type":"REAL"},{"time":140572,"lane":2,"type":"REAL"},{"time":141042,"lane":1,"type":"REAL"},{"time":141324,"lane":2,"type":"REAL"},{"time":141593,"lane":3,"type":"REAL"},{"time":143614,"lane":1,"type":"REAL"},{"time":143879,"lane":2,"type":"REAL"},{"time":143997,"lane":3,"type":"REAL"},{"time":144364,"lane":2,"type":"REAL"},{"time":144587,"lane":1,"type":"REAL"},{"time":145064,"lane":2,"type":"REAL"},{"time":145364,"lane":3,"type":"REAL"},{"time":145588,"lane":2,"type":"REAL"},{"time":146142,"lane":2,"type":"REAL"},{"time":146622,"lane":2,"type":"REAL"},{"time":147083,"lane":2,"type":"REAL"},{"time":147330,"lane":1,"type":"REAL"},{"time":147801,"lane":2,"type":"REAL"},{"time":148370,"lane":3,"type":"REAL"},{"time":148703,"lane":1,"type":"REAL"},{"time":149138,"lane":2,"type":"REAL"},{"time":149439,"lane":3,"type":"REAL"},{"time":149640,"lane":1,"type":"REAL"},{"time":149882,"lane":2,"type":"REAL"},{"time":150201,"lane":3,"type":"REAL"},{"time":150398,"lane":2,"type":"REAL"},{"time":151117,"lane":1,"type":"REAL"},{"time":151389,"lane":2,"type":"REAL"},{"time":151687,"lane":3,"type":"REAL"},{"time":152146,"lane":2,"type":"REAL"},{"time":152416,"lane":2,"type":"REAL"},{"time":152689,"lane":2,"type":"REAL"},{"time":153481,"lane":1,"type":"REAL"},{"time":153636,"lane":2,"type":"REAL"},{"time":153996,"lane":3,"type":"REAL"},{"time":154518,"lane":3,"type":"REAL"},{"time":154541,"lane":3,"type":"REAL"},{"time":154576,"lane":3,"type":"REAL"},{"time":154601,"lane":3,"type":"REAL"},{"time":154641,"lane":3,"type":"REAL"},{"time":154665,"lane":3,"type":"REAL"},{"time":154705,"lane":3,"type":"REAL"},{"time":154727,"lane":3,"type":"REAL"},{"time":154766,"lane":3,"type":"REAL"},{"time":154794,"lane":3,"type":"REAL"},{"time":154829,"lane":3,"type":"REAL"},{"time":154869,"lane":3,"type":"REAL"},{"time":154897,"lane":3,"type":"REAL"},{"time":154933,"lane":3,"type":"REAL"},{"time":154958,"lane":3,"type":"REAL"},{"time":155001,"lane":3,"type":"REAL"},{"time":155023,"lane":3,"type":"REAL"},{"time":155066,"lane":3,"type":"REAL"},{"time":155086,"lane":3,"type":"REAL"},{"time":155124,"lane":3,"type":"REAL"},{"time":155151,"lane":3,"type":"REAL"},{"time":155185,"lane":3,"type":"REAL"},{"time":155224,"lane":3,"type":"REAL"},{"time":155257,"lane":3,"type":"REAL"},{"time":155289,"lane":3,"type":"REAL"},{"time":155315,"lane":3,"type":"REAL"},{"time":155350,"lane":3,"type":"REAL"},{"time":155380,"lane":3,"type":"REAL"},{"time":155413,"lane":3,"type":"REAL"},{"time":155441,"lane":3,"type":"REAL"},{"time":155480,"lane":3,"type":"REAL"},{"time":155515,"lane":3,"type":"REAL"},{"time":155542,"lane":3,"type":"REAL"},{"time":155584,"lane":3,"type":"REAL"},{"time":155606,"lane":3,"type":"REAL"},{"time":155649,"lane":3,"type":"REAL"},{"time":155669,"lane":3,"type":"REAL"},{"time":155707,"lane":3,"type":"REAL"},{"time":155735,"lane":3,"type":"REAL"},{"time":155769,"lane":3,"type":"REAL"},{"time":155796,"lane":3,"type":"REAL"},{"time":157750,"lane":1,"type":"REAL"},{"time":158223,"lane":2,"type":"REAL"},{"time":158470,"lane":3,"type":"REAL"},{"time":158724,"lane":2,"type":"REAL"},{"time":159197,"lane":1,"type":"REAL"},{"time":159730,"lane":2,"type":"REAL"},{"time":160082,"lane":2,"type":"REAL"},{"time":160496,"lane":2,"type":"REAL"},{"time":160719,"lane":1,"type":"REAL"},{"time":161210,"lane":2,"type":"REAL"},{"time":161524,"lane":3,"type":"REAL"},{"time":161740,"lane":2,"type":"REAL"},{"time":162131,"lane":1,"type":"REAL"},{"time":162763,"lane":2,"type":"REAL"},{"time":163280,"lane":2,"type":"REAL"},{"time":163567,"lane":2,"type":"REAL"},{"time":163794,"lane":3,"type":"REAL"},{"time":164122,"lane":1,"type":"REAL"},{"time":164527,"lane":2,"type":"REAL"},{"time":164776,"lane":3,"type":"REAL"},{"time":165020,"lane":1,"type":"REAL"},{"time":165275,"lane":2,"type":"REAL"},{"time":165589,"lane":3,"type":"REAL"},{"time":166104,"lane":2,"type":"REAL"},{"time":166326,"lane":2,"type":"REAL"},{"time":166638,"lane":2,"type":"REAL"},{"time":166882,"lane":1,"type":"REAL"},{"time":167282,"lane":2,"type":"REAL"},{"time":167790,"lane":1,"type":"REAL"},{"time":168044,"lane":2,"type":"REAL"},{"time":168321,"lane":3,"type":"REAL"},{"time":168536,"lane":2,"type":"REAL"},{"time":168799,"lane":1,"type":"REAL"},{"time":169047,"lane":2,"type":"REAL"},{"time":169300,"lane":3,"type":"REAL"},{"time":169526,"lane":2,"type":"REAL"},{"time":169800,"lane":1,"type":"REAL"},{"time":169805,"lane":2,"type":"REAL"},{"time":172093,"lane":1,"type":"REAL"},{"time":172347,"lane":2,"type":"REAL"},{"time":172601,"lane":3,"type":"REAL"},{"time":172850,"lane":2,"type":"REAL"},{"time":173338,"lane":1,"type":"REAL"},{"time":173577,"lane":2,"type":"REAL"},{"time":173913,"lane":3,"type":"REAL"},{"time":175886,"lane":1,"type":"REAL"},{"time":176140,"lane":2,"type":"REAL"},{"time":176260,"lane":3,"type":"REAL"},{"time":176609,"lane":1,"type":"REAL"},{"time":176864,"lane":2,"type":"REAL"},{"time":177375,"lane":3,"type":"REAL"},{"time":177641,"lane":2,"type":"REAL"},{"time":177909,"lane":1,"type":"REAL"},{"time":179621,"lane":1,"type":"REAL"},{"time":180086,"lane":2,"type":"REAL"},{"time":181425,"lane":2,"type":"REAL"},{"time":181673,"lane":3,"type":"REAL"},{"time":182389,"lane":1,"type":"REAL"},{"time":182413,"lane":2,"type":"REAL"},{"time":182699,"lane":2,"type":"REAL"},{"time":183388,"lane":1,"type":"REAL"},{"time":183683,"lane":2,"type":"REAL"},{"time":183922,"lane":3,"type":"REAL"},{"time":184180,"lane":2,"type":"REAL"},{"time":184436,"lane":1,"type":"REAL"},{"time":184667,"lane":2,"type":"REAL"},{"time":184968,"lane":3,"type":"REAL"},{"time":185243,"lane":2,"type":"REAL"},{"time":185447,"lane":1,"type":"REAL"},{"time":185740,"lane":2,"type":"REAL"},{"time":185962,"lane":2,"type":"REAL"},{"time":186456,"lane":2,"type":"REAL"},{"time":186952,"lane":2,"type":"REAL"},{"time":187465,"lane":2,"type":"REAL"},{"time":187930,"lane":1,"type":"REAL"},{"time":188234,"lane":1,"type":"REAL"},{"time":188479,"lane":2,"type":"REAL"},{"time":188740,"lane":2,"type":"REAL"},{"time":189067,"lane":3,"type":"REAL"},{"time":189477,"lane":1,"type":"REAL"},{"time":189720,"lane":2,"type":"REAL"},{"time":190015,"lane":3,"type":"REAL"},{"time":190490,"lane":2,"type":"REAL"},{"time":191028,"lane":3,"type":"REAL"},{"time":191531,"lane":2,"type":"REAL"},{"time":192013,"lane":1,"type":"REAL"},{"time":192260,"lane":2,"type":"REAL"},{"time":192369,"lane":3,"type":"REAL"},{"time":192748,"lane":1,"type":"REAL"},{"time":193026,"lane":2,"type":"REAL"},{"time":193515,"lane":3,"type":"REAL"},{"time":193786,"lane":2,"type":"REAL"},{"time":194048,"lane":1,"type":"REAL"},{"time":194398,"lane":1,"type":"REAL"},{"time":194991,"lane":2,"type":"REAL"},{"time":195351,"lane":2,"type":"REAL"},{"time":196026,"lane":3,"type":"REAL"},{"time":196555,"lane":3,"type":"REAL"},{"time":196810,"lane":2,"type":"REAL"},{"time":197056,"lane":1,"type":"REAL"},{"time":197288,"lane":2,"type":"REAL"},{"time":197566,"lane":3,"type":"REAL"},{"time":197771,"lane":2,"type":"REAL"},{"time":198130,"lane":1,"type":"REAL"},{"time":198527,"lane":1,"type":"REAL"},{"time":199052,"lane":2,"type":"REAL"},{"time":199436,"lane":2,"type":"REAL"},{"time":200092,"lane":3,"type":"REAL"},{"time":200295,"lane":1,"type":"REAL"},{"time":200538,"lane":2,"type":"REAL"},{"time":200859,"lane":3,"type":"REAL"},{"time":201047,"lane":2,"type":"REAL"},{"time":201317,"lane":1,"type":"REAL"},{"time":201558,"lane":2,"type":"REAL"},{"time":201840,"lane":3,"type":"REAL"},{"time":202056,"lane":2,"type":"REAL"}];
+    // 레인 설정 확장 (5레인)
+    const LANE_COUNT = 5;
+    const LANE_WIDTH = 100; // 500px / 5 = 100px
 
-    // notes 배열에 데이터를 복사합니다.
-    notes = [...initialData]; 
-    updateUI(); // 시작 시 노트 개수 표시를 위해 호출
+    // 초기 데이터 로드 (기존 3레인 데이터를 5레인으로 랜덤 분산)
+    const initialRawData = [[{"time":601,"lane":1,"type":"REAL"},{"time":892,"lane":1,"type":"REAL"},{"time":2456,"lane":1,"type":"REAL"},{"time":2775,"lane":1,"type":"REAL"},{"time":3446,"lane":2,"type":"REAL"},{"time":3705,"lane":3,"type":"REAL"},{"time":3892,"lane":1,"type":"REAL"},{"time":4481,"lane":2,"type":"REAL"},{"time":4814,"lane":2,"type":"REAL"},{"time":6508,"lane":3,"type":"REAL"},{"time":6814,"lane":3,"type":"REAL"},{"time":8477,"lane":1,"type":"REAL"},{"time":8855,"lane":1,"type":"REAL"},{"time":9329,"lane":2,"type":"REAL"},{"time":9648,"lane":2,"type":"REAL"},{"time":10502,"lane":3,"type":"REAL"},{"time":10867,"lane":3,"type":"REAL"},{"time":12518,"lane":1,"type":"REAL"},{"time":12930,"lane":2,"type":"REAL"},{"time":14529,"lane":1,"type":"REAL"},{"time":14869,"lane":2,"type":"REAL"},{"time":15291,"lane":1,"type":"REAL"},{"time":15891,"lane":1,"type":"REAL"},{"time":16279,"lane":1,"type":"REAL"},{"time":17559,"lane":1,"type":"REAL"},{"time":17714,"lane":2,"type":"REAL"},{"time":18004,"lane":3,"type":"REAL"},{"time":19586,"lane":1,"type":"REAL"},{"time":19969,"lane":1,"type":"REAL"},{"time":20304,"lane":2,"type":"REAL"},{"time":21594,"lane":3,"type":"REAL"},{"time":21806,"lane":2,"type":"REAL"},{"time":22087,"lane":1,"type":"REAL"},{"time":23886,"lane":1,"type":"REAL"},{"time":24109,"lane":2,"type":"REAL"},{"time":24372,"lane":3,"type":"REAL"},{"time":24559,"lane":2,"type":"REAL"},{"time":24928,"lane":2,"type":"REAL"},{"time":25059,"lane":2,"type":"REAL"},{"time":26193,"lane":3,"type":"REAL"},{"time":26821,"lane":1,"type":"REAL"},{"time":27655,"lane":1,"type":"REAL"},{"time":27830,"lane":2,"type":"REAL"},{"time":28153,"lane":3,"type":"REAL"},{"time":29683,"lane":1,"type":"REAL"},{"time":29907,"lane":2,"type":"REAL"},{"time":30164,"lane":3,"type":"REAL"},{"time":30863,"lane":2,"type":"REAL"},{"time":31678,"lane":1,"type":"REAL"},{"time":31888,"lane":2,"type":"REAL"},{"time":32199,"lane":3,"type":"REAL"},{"time":32669,"lane":2,"type":"REAL"},{"time":33159,"lane":2,"type":"REAL"},{"time":33706,"lane":3,"type":"REAL"},{"time":34200,"lane":3,"type":"REAL"},{"time":34682,"lane":1,"type":"REAL"},{"time":35134,"lane":1,"type":"REAL"},{"time":35639,"lane":2,"type":"REAL"},{"time":36092,"lane":2,"type":"REAL"},{"time":36705,"lane":3,"type":"REAL"},{"time":37202,"lane":3,"type":"REAL"},{"time":37719,"lane":3,"type":"REAL"},{"time":38201,"lane":3,"type":"REAL"},{"time":38648,"lane":1,"type":"REAL"},{"time":39047,"lane":1,"type":"REAL"},{"time":39650,"lane":1,"type":"REAL"},{"time":40164,"lane":1,"type":"REAL"},{"time":40791,"lane":1,"type":"REAL"},{"time":41161,"lane":1,"type":"REAL"},{"time":41662,"lane":2,"type":"REAL"},{"time":42077,"lane":2,"type":"REAL"},{"time":42476,"lane":3,"type":"REAL"},{"time":43513,"lane":1,"type":"REAL"},{"time":43757,"lane":2,"type":"REAL"},{"time":44174,"lane":3,"type":"REAL"},{"time":44514,"lane":1,"type":"REAL"},{"time":44659,"lane":2,"type":"REAL"},{"time":44779,"lane":3,"type":"REAL"},{"time":45533,"lane":1,"type":"REAL"},{"time":45643,"lane":2,"type":"REAL"},{"time":45717,"lane":3,"type":"REAL"},{"time":46725,"lane":1,"type":"REAL"},{"time":46830,"lane":2,"type":"REAL"},{"time":46911,"lane":3,"type":"REAL"},{"time":47685,"lane":1,"type":"REAL"},{"time":47804,"lane":2,"type":"REAL"},{"time":47906,"lane":3,"type":"REAL"},{"time":48751,"lane":1,"type":"REAL"},{"time":51029,"lane":1,"type":"REAL"},{"time":51313,"lane":2,"type":"REAL"},{"time":51589,"lane":3,"type":"REAL"},{"time":51837,"lane":1,"type":"REAL"},{"time":52315,"lane":2,"type":"REAL"},{"time":52640,"lane":3,"type":"REAL"},{"time":52866,"lane":2,"type":"REAL"},{"time":53222,"lane":3,"type":"REAL"},{"time":53789,"lane":1,"type":"REAL"},{"time":54296,"lane":1,"type":"REAL"},{"time":54883,"lane":1,"type":"REAL"},{"time":55183,"lane":1,"type":"REAL"},{"time":55283,"lane":1,"type":"REAL"},{"time":55571,"lane":1,"type":"REAL"},{"time":55825,"lane":1,"type":"REAL"},{"time":56641,"lane":3,"type":"REAL"},{"time":57155,"lane":2,"type":"REAL"},{"time":58867,"lane":1,"type":"REAL"},{"time":59116,"lane":2,"type":"REAL"},{"time":59295,"lane":3,"type":"REAL"},{"time":59663,"lane":2,"type":"REAL"},{"time":59942,"lane":2,"type":"REAL"},{"time":60380,"lane":2,"type":"REAL"},{"time":60587,"lane":2,"type":"REAL"},{"time":61730,"lane":1,"type":"REAL"},{"time":62607,"lane":3,"type":"REAL"},{"time":63636,"lane":2,"type":"REAL"},{"time":64965,"lane":3,"type":"REAL"},{"time":67148,"lane":1,"type":"REAL"},{"time":67438,"lane":2,"type":"REAL"},{"time":67726,"lane":3,"type":"REAL"},{"time":67975,"lane":2,"type":"REAL"},{"time":68470,"lane":3,"type":"REAL"},{"time":68681,"lane":2,"type":"REAL"},{"time":69009,"lane":1,"type":"REAL"},{"time":70992,"lane":1,"type":"REAL"},{"time":71225,"lane":2,"type":"REAL"},{"time":71388,"lane":3,"type":"REAL"},{"time":71740,"lane":2,"type":"REAL"},{"time":72017,"lane":1,"type":"REAL"},{"time":72462,"lane":2,"type":"REAL"},{"time":72978,"lane":3,"type":"REAL"},{"time":73478,"lane":3,"type":"REAL"},{"time":73986,"lane":3,"type":"REAL"},{"time":74387,"lane":3,"type":"REAL"},{"time":74983,"lane":2,"type":"REAL"},{"time":75393,"lane":1,"type":"REAL"},{"time":76540,"lane":3,"type":"REAL"},{"time":76730,"lane":2,"type":"REAL"},{"time":77530,"lane":3,"type":"REAL"},{"time":77795,"lane":2,"type":"REAL"},{"time":78552,"lane":3,"type":"REAL"},{"time":78805,"lane":1,"type":"REAL"},{"time":79310,"lane":1,"type":"REAL"},{"time":79348,"lane":1,"type":"REAL"},{"time":79379,"lane":1,"type":"REAL"},{"time":79412,"lane":1,"type":"REAL"},{"time":79441,"lane":1,"type":"REAL"},{"time":79481,"lane":1,"type":"REAL"},{"time":79512,"lane":1,"type":"REAL"},{"time":79538,"lane":1,"type":"REAL"},{"time":79574,"lane":1,"type":"REAL"},{"time":79601,"lane":1,"type":"REAL"},{"time":79642,"lane":1,"type":"REAL"},{"time":79664,"lane":1,"type":"REAL"},{"time":79703,"lane":1,"type":"REAL"},{"time":79732,"lane":1,"type":"REAL"},{"time":79766,"lane":1,"type":"REAL"},{"time":79794,"lane":1,"type":"REAL"},{"time":79829,"lane":1,"type":"REAL"},{"time":79868,"lane":1,"type":"REAL"},{"time":79900,"lane":1,"type":"REAL"},{"time":79932,"lane":1,"type":"REAL"},{"time":79958,"lane":1,"type":"REAL"},{"time":79999,"lane":1,"type":"REAL"},{"time":80023,"lane":1,"type":"REAL"},{"time":80062,"lane":1,"type":"REAL"},{"time":80092,"lane":1,"type":"REAL"},{"time":80123,"lane":1,"type":"REAL"},{"time":80150,"lane":1,"type":"REAL"},{"time":80185,"lane":1,"type":"REAL"},{"time":80225,"lane":1,"type":"REAL"},{"time":80249,"lane":1,"type":"REAL"},{"time":80286,"lane":1,"type":"REAL"},{"time":80314,"lane":1,"type":"REAL"},{"time":80348,"lane":1,"type":"REAL"},{"time":80377,"lane":1,"type":"REAL"},{"time":80412,"lane":1,"type":"REAL"},{"time":80452,"lane":1,"type":"REAL"},{"time":80484,"lane":1,"type":"REAL"},{"time":80813,"lane":2,"type":"REAL"},{"time":81014,"lane":3,"type":"REAL"},{"time":85136,"lane":1,"type":"REAL"},{"time":85510,"lane":1,"type":"REAL"},{"time":86133,"lane":2,"type":"REAL"},{"time":86627,"lane":2,"type":"REAL"},{"time":87161,"lane":3,"type":"REAL"},{"time":87511,"lane":3,"type":"REAL"},{"time":88117,"lane":1,"type":"REAL"},{"time":88674,"lane":1,"type":"REAL"},{"time":88998,"lane":1,"type":"REAL"},{"time":89449,"lane":2,"type":"REAL"},{"time":90620,"lane":1,"type":"REAL"},{"time":90929,"lane":2,"type":"REAL"},{"time":91032,"lane":3,"type":"REAL"},{"time":92684,"lane":2,"type":"REAL"},{"time":92972,"lane":2,"type":"REAL"},{"time":93142,"lane":2,"type":"REAL"},{"time":93468,"lane":3,"type":"REAL"},{"time":94668,"lane":1,"type":"REAL"},{"time":95012,"lane":2,"type":"REAL"},{"time":95098,"lane":3,"type":"REAL"},{"time":96725,"lane":1,"type":"REAL"},{"time":97054,"lane":2,"type":"REAL"},{"time":97173,"lane":3,"type":"REAL"},{"time":97519,"lane":1,"type":"REAL"},{"time":98396,"lane":2,"type":"REAL"},{"time":98718,"lane":3,"type":"REAL"},{"time":98988,"lane":2,"type":"REAL"},{"time":99134,"lane":1,"type":"REAL"},{"time":100446,"lane":1,"type":"REAL"},{"time":100956,"lane":2,"type":"REAL"},{"time":101192,"lane":2,"type":"REAL"},{"time":101714,"lane":3,"type":"REAL"},{"time":102201,"lane":1,"type":"REAL"},{"time":102728,"lane":2,"type":"REAL"},{"time":103003,"lane":2,"type":"REAL"},{"time":105267,"lane":3,"type":"REAL"},{"time":105697,"lane":3,"type":"REAL"},{"time":106242,"lane":2,"type":"REAL"},{"time":106838,"lane":2,"type":"REAL"},{"time":107326,"lane":1,"type":"REAL"},{"time":107717,"lane":1,"type":"REAL"},{"time":108221,"lane":2,"type":"REAL"},{"time":108712,"lane":2,"type":"REAL"},{"time":109248,"lane":3,"type":"REAL"},{"time":109728,"lane":3,"type":"REAL"},{"time":110283,"lane":3,"type":"REAL"},{"time":110784,"lane":3,"type":"REAL"},{"time":111309,"lane":1,"type":"REAL"},{"time":111650,"lane":1,"type":"REAL"},{"time":112128,"lane":1,"type":"REAL"},{"time":112359,"lane":1,"type":"REAL"},{"time":112786,"lane":2,"type":"REAL"},{"time":113322,"lane":3,"type":"REAL"},{"time":113750,"lane":3,"type":"REAL"},{"time":114361,"lane":2,"type":"REAL"},{"time":114740,"lane":1,"type":"REAL"},{"time":115074,"lane":2,"type":"REAL"},{"time":115382,"lane":3,"type":"REAL"},{"time":115853,"lane":2,"type":"REAL"},{"time":116345,"lane":1,"type":"REAL"},{"time":116762,"lane":1,"type":"REAL"},{"time":117109,"lane":2,"type":"REAL"},{"time":117377,"lane":2,"type":"REAL"},{"time":117874,"lane":2,"type":"REAL"},{"time":117918,"lane":2,"type":"REAL"},{"time":117948,"lane":2,"type":"REAL"},{"time":118347,"lane":3,"type":"REAL"},{"time":118879,"lane":3,"type":"REAL"},{"time":119380,"lane":1,"type":"REAL"},{"time":119723,"lane":1,"type":"REAL"},{"time":120362,"lane":1,"type":"REAL"},{"time":120859,"lane":1,"type":"REAL"},{"time":120895,"lane":1,"type":"REAL"},{"time":120923,"lane":1,"type":"REAL"},{"time":121386,"lane":1,"type":"REAL"},{"time":123590,"lane":1,"type":"REAL"},{"time":123881,"lane":2,"type":"REAL"},{"time":124175,"lane":3,"type":"REAL"},{"time":124428,"lane":1,"type":"REAL"},{"time":124921,"lane":2,"type":"REAL"},{"time":125237,"lane":3,"type":"REAL"},{"time":125491,"lane":2,"type":"REAL"},{"time":125883,"lane":2,"type":"REAL"},{"time":127428,"lane":1,"type":"REAL"},{"time":127706,"lane":2,"type":"REAL"},{"time":127805,"lane":3,"type":"REAL"},{"time":128196,"lane":1,"type":"REAL"},{"time":128440,"lane":2,"type":"REAL"},{"time":128954,"lane":3,"type":"REAL"},{"time":129218,"lane":2,"type":"REAL"},{"time":131464,"lane":3,"type":"REAL"},{"time":131744,"lane":2,"type":"REAL"},{"time":131901,"lane":1,"type":"REAL"},{"time":132435,"lane":1,"type":"REAL"},{"time":132953,"lane":2,"type":"REAL"},{"time":133266,"lane":3,"type":"REAL"},{"time":133499,"lane":2,"type":"REAL"},{"time":134232,"lane":1,"type":"REAL"},{"time":135242,"lane":1,"type":"REAL"},{"time":136286,"lane":1,"type":"REAL"},{"time":137385,"lane":1,"type":"REAL"},{"time":137551,"lane":2,"type":"REAL"},{"time":139847,"lane":1,"type":"REAL"},{"time":140013,"lane":2,"type":"REAL"},{"time":140312,"lane":3,"type":"REAL"},{"time":140572,"lane":2,"type":"REAL"},{"time":141042,"lane":1,"type":"REAL"},{"time":141324,"lane":2,"type":"REAL"},{"time":141593,"lane":3,"type":"REAL"},{"time":143614,"lane":1,"type":"REAL"},{"time":143879,"lane":2,"type":"REAL"},{"time":143997,"lane":3,"type":"REAL"},{"time":144364,"lane":2,"type":"REAL"},{"time":144587,"lane":1,"type":"REAL"},{"time":145064,"lane":2,"type":"REAL"},{"time":145364,"lane":3,"type":"REAL"},{"time":145588,"lane":2,"type":"REAL"},{"time":146142,"lane":2,"type":"REAL"},{"time":146622,"lane":2,"type":"REAL"},{"time":147083,"lane":2,"type":"REAL"},{"time":147330,"lane":1,"type":"REAL"},{"time":147801,"lane":2,"type":"REAL"},{"time":148370,"lane":3,"type":"REAL"},{"time":148703,"lane":1,"type":"REAL"},{"time":149138,"lane":2,"type":"REAL"},{"time":149439,"lane":3,"type":"REAL"},{"time":149640,"lane":1,"type":"REAL"},{"time":149882,"lane":2,"type":"REAL"},{"time":150201,"lane":3,"type":"REAL"},{"time":150398,"lane":2,"type":"REAL"},{"time":151117,"lane":1,"type":"REAL"},{"time":151389,"lane":2,"type":"REAL"},{"time":151687,"lane":3,"type":"REAL"},{"time":152146,"lane":2,"type":"REAL"},{"time":152416,"lane":2,"type":"REAL"},{"time":152689,"lane":2,"type":"REAL"},{"time":153481,"lane":1,"type":"REAL"},{"time":153636,"lane":2,"type":"REAL"},{"time":153996,"lane":3,"type":"REAL"},{"time":154518,"lane":3,"type":"REAL"},{"time":154541,"lane":3,"type":"REAL"},{"time":154576,"lane":3,"type":"REAL"},{"time":154601,"lane":3,"type":"REAL"},{"time":154641,"lane":3,"type":"REAL"},{"time":154665,"lane":3,"type":"REAL"},{"time":154705,"lane":3,"type":"REAL"},{"time":154727,"lane":3,"type":"REAL"},{"time":154766,"lane":3,"type":"REAL"},{"time":154794,"lane":3,"type":"REAL"},{"time":154829,"lane":3,"type":"REAL"},{"time":154869,"lane":3,"type":"REAL"},{"time":154897,"lane":3,"type":"REAL"},{"time":154933,"lane":3,"type":"REAL"},{"time":154958,"lane":3,"type":"REAL"},{"time":155001,"lane":3,"type":"REAL"},{"time":155023,"lane":3,"type":"REAL"},{"time":155066,"lane":3,"type":"REAL"},{"time":155086,"lane":3,"type":"REAL"},{"time":155124,"lane":3,"type":"REAL"},{"time":155151,"lane":3,"type":"REAL"},{"time":155185,"lane":3,"type":"REAL"},{"time":155224,"lane":3,"type":"REAL"},{"time":155257,"lane":3,"type":"REAL"},{"time":155289,"lane":3,"type":"REAL"},{"time":155315,"lane":3,"type":"REAL"},{"time":155350,"lane":3,"type":"REAL"},{"time":155380,"lane":3,"type":"REAL"},{"time":155413,"lane":3,"type":"REAL"},{"time":155441,"lane":3,"type":"REAL"},{"time":155480,"lane":3,"type":"REAL"},{"time":155515,"lane":3,"type":"REAL"},{"time":155542,"lane":3,"type":"REAL"},{"time":155584,"lane":3,"type":"REAL"},{"time":155606,"lane":3,"type":"REAL"},{"time":155649,"lane":3,"type":"REAL"},{"time":155669,"lane":3,"type":"REAL"},{"time":155707,"lane":3,"type":"REAL"},{"time":155735,"lane":3,"type":"REAL"},{"time":155769,"lane":3,"type":"REAL"},{"time":155796,"lane":3,"type":"REAL"},{"time":157750,"lane":1,"type":"REAL"},{"time":158223,"lane":2,"type":"REAL"},{"time":158470,"lane":3,"type":"REAL"},{"time":158724,"lane":2,"type":"REAL"},{"time":159197,"lane":1,"type":"REAL"},{"time":159730,"lane":2,"type":"REAL"},{"time":160082,"lane":2,"type":"REAL"},{"time":160496,"lane":2,"type":"REAL"},{"time":160719,"lane":1,"type":"REAL"},{"time":161210,"lane":2,"type":"REAL"},{"time":161524,"lane":3,"type":"REAL"},{"time":161740,"lane":2,"type":"REAL"},{"time":162131,"lane":1,"type":"REAL"},{"time":162763,"lane":2,"type":"REAL"},{"time":163280,"lane":2,"type":"REAL"},{"time":163567,"lane":2,"type":"REAL"},{"time":163794,"lane":3,"type":"REAL"},{"time":164122,"lane":1,"type":"REAL"},{"time":164527,"lane":2,"type":"REAL"},{"time":164776,"lane":3,"type":"REAL"},{"time":165020,"lane":1,"type":"REAL"},{"time":165275,"lane":2,"type":"REAL"},{"time":165589,"lane":3,"type":"REAL"},{"time":166104,"lane":2,"type":"REAL"},{"time":166326,"lane":2,"type":"REAL"},{"time":166638,"lane":2,"type":"REAL"},{"time":166882,"lane":1,"type":"REAL"},{"time":167282,"lane":2,"type":"REAL"},{"time":167790,"lane":1,"type":"REAL"},{"time":168044,"lane":2,"type":"REAL"},{"time":168321,"lane":3,"type":"REAL"},{"time":168536,"lane":2,"type":"REAL"},{"time":168799,"lane":1,"type":"REAL"},{"time":169047,"lane":2,"type":"REAL"},{"time":169300,"lane":3,"type":"REAL"},{"time":169526,"lane":2,"type":"REAL"},{"time":169800,"lane":1,"type":"REAL"},{"time":169805,"lane":2,"type":"REAL"},{"time":172093,"lane":1,"type":"REAL"},{"time":172347,"lane":2,"type":"REAL"},{"time":172601,"lane":3,"type":"REAL"},{"time":172850,"lane":2,"type":"REAL"},{"time":173338,"lane":1,"type":"REAL"},{"time":173577,"lane":2,"type":"REAL"},{"time":173913,"lane":3,"type":"REAL"},{"time":175886,"lane":1,"type":"REAL"},{"time":176140,"lane":2,"type":"REAL"},{"time":176260,"lane":3,"type":"REAL"},{"time":176609,"lane":1,"type":"REAL"},{"time":176864,"lane":2,"type":"REAL"},{"time":177375,"lane":3,"type":"REAL"},{"time":177641,"lane":2,"type":"REAL"},{"time":177909,"lane":1,"type":"REAL"},{"time":179621,"lane":1,"type":"REAL"},{"time":180086,"lane":2,"type":"REAL"},{"time":181425,"lane":2,"type":"REAL"},{"time":181673,"lane":3,"type":"REAL"},{"time":182389,"lane":1,"type":"REAL"},{"time":182413,"lane":2,"type":"REAL"},{"time":182699,"lane":2,"type":"REAL"},{"time":183388,"lane":1,"type":"REAL"},{"time":183683,"lane":2,"type":"REAL"},{"time":183922,"lane":3,"type":"REAL"},{"time":184180,"lane":2,"type":"REAL"},{"time":184436,"lane":1,"type":"REAL"},{"time":184667,"lane":2,"type":"REAL"},{"time":184968,"lane":3,"type":"REAL"},{"time":185243,"lane":2,"type":"REAL"},{"time":185447,"lane":1,"type":"REAL"},{"time":185740,"lane":2,"type":"REAL"},{"time":185962,"lane":2,"type":"REAL"},{"time":186456,"lane":2,"type":"REAL"},{"time":186952,"lane":2,"type":"REAL"},{"time":187465,"lane":2,"type":"REAL"},{"time":187930,"lane":1,"type":"REAL"},{"time":188234,"lane":1,"type":"REAL"},{"time":188479,"lane":2,"type":"REAL"},{"time":188740,"lane":2,"type":"REAL"},{"time":189067,"lane":3,"type":"REAL"},{"time":189477,"lane":1,"type":"REAL"},{"time":189720,"lane":2,"type":"REAL"},{"time":190015,"lane":3,"type":"REAL"},{"time":190490,"lane":2,"type":"REAL"},{"time":191028,"lane":3,"type":"REAL"},{"time":191531,"lane":2,"type":"REAL"},{"time":192013,"lane":1,"type":"REAL"},{"time":192260,"lane":2,"type":"REAL"},{"time":192369,"lane":3,"type":"REAL"},{"time":192748,"lane":1,"type":"REAL"},{"time":193026,"lane":2,"type":"REAL"},{"time":193515,"lane":3,"type":"REAL"},{"time":193786,"lane":2,"type":"REAL"},{"time":194048,"lane":1,"type":"REAL"},{"time":194398,"lane":1,"type":"REAL"},{"time":194991,"lane":2,"type":"REAL"},{"time":195351,"lane":2,"type":"REAL"},{"time":196026,"lane":3,"type":"REAL"},{"time":196555,"lane":3,"type":"REAL"},{"time":196810,"lane":2,"type":"REAL"},{"time":197056,"lane":1,"type":"REAL"},{"time":197288,"lane":2,"type":"REAL"},{"time":197566,"lane":3,"type":"REAL"},{"time":197771,"lane":2,"type":"REAL"},{"time":198130,"lane":1,"type":"REAL"},{"time":198527,"lane":1,"type":"REAL"},{"time":199052,"lane":2,"type":"REAL"},{"time":199436,"lane":2,"type":"REAL"},{"time":200092,"lane":3,"type":"REAL"},{"time":200295,"lane":1,"type":"REAL"},{"time":200538,"lane":2,"type":"REAL"},{"time":200859,"lane":3,"type":"REAL"},{"time":201047,"lane":2,"type":"REAL"},{"time":201317,"lane":1,"type":"REAL"},{"time":201558,"lane":2,"type":"REAL"},{"time":201840,"lane":3,"type":"REAL"},{"time":202056,"lane":2,"type":"REAL"}]];
+
+    // 5레인 대응을 위해 기존 데이터를 랜덤하게 레인 배정
+    notes = initialRawData[0].map(n => {
+        // 기존 1,2,3 레인을 유지하되 일부를 4,5 레인으로 랜덤 이동
+        const newLane = Math.random() > 0.4 ? n.lane : Math.floor(Math.random() * 5) + 1;
+        
+        // 데이터 중 일부를 억지로 FAKE나 BOSS로 변경 (에디터 테스트용)
+        let type = 'REAL';
+        if (Math.random() < 0.05) type = 'FAKE'; // 5% 확률로 가짜
+        if (n.time > 40000 && n.time < 42000 && Math.random() < 0.2) type = 'BOSS'; // 특정 구간 BOSS
+
+        return { ...n, lane: newLane, type: type, hit: false };
+    });
+    notes.sort((a, b) => a.time - b.time); // 시간순 정렬
 
     function toggleMode() {
         currentMode = currentMode === 'EDIT' ? 'PLAY' : 'EDIT';
@@ -83,9 +100,9 @@
         tag.className = `mode-indicator MODE-${currentMode}`;
         playStats.style.display = currentMode === 'PLAY' ? 'block' : 'none';
         
-        // 플레이 모드 진입 시 노트 상태 초기화
         notes.forEach(n => n.hit = false);
-        score = 0; life = 100;
+        score = 0; life = 0; // 플레이 모드 진입 시 의심도 0
+        characterState = 'IDLE';
         updateUI();
     }
 
@@ -99,49 +116,76 @@
         if (e.code === 'Tab') { e.preventDefault(); toggleMode(); }
 
         let lane = 0;
+        // 1,2,3,4,5 키 대응
         if (e.key === '1') lane = 1;
         if (e.key === '2') lane = 2;
         if (e.key === '3') lane = 3;
+        if (e.key === '4') lane = 4;
+        if (e.key === '5') lane = 5;
 
         if (lane > 0 && !audio.paused) {
             const currentTime = audio.currentTime * 1000;
             if (currentMode === 'EDIT') {
-                // 에디터 모드: 노트 기록
-                notes.push({ time: Math.floor(currentTime), lane: lane, type: 'REAL' });
+                notes.push({ time: Math.floor(currentTime), lane: lane, type: 'REAL', hit: false });
                 notes.sort((a, b) => a.time - b.time);
             } else {
-                // 플레이 모드: 판정
                 checkHit(currentTime, lane);
             }
         }
     });
 
     function checkHit(currentTime, lane) {
-        const hitNote = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - currentTime) < 150);
+        // 가장 가깝고 판정 범위 내에 있는 노트 찾기
+        const hitNote = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - currentTime) < 160);
+        
         if (hitNote) {
             hitNote.hit = true;
-            score += 100;
-            showJudge("PERFECT");
+            if (hitNote.type === 'REAL') {
+                score += 100;
+                showJudge("回數成功!", "green"); // 회수 성공 (일본어풍 한자 연출)
+                characterState = 'HIT';
+            } else if (hitNote.type === 'FAKE') {
+                life += 15; // 의심도 상승
+                showJudge("FAKE!!", "red");
+                characterState = 'MISS';
+            } else if (hitNote.type === 'BOSS') {
+                // BOSS 노트를 누르면 순간적으로 의심도가 크게 올라감
+                life += 25;
+                showJudge("꼰대기습!", "#8b0000"); // 꼰대 기습
+                characterState = 'MISS';
+            }
             updateUI();
+            // 0.3초 후Idle 상태로 복귀
+            setTimeout(() => characterState = 'IDLE', 300);
         }
     }
 
-    function showJudge(txt) {
+    function showJudge(txt, color) {
         const display = document.getElementById('judge-display');
         display.innerText = txt;
-        setTimeout(() => display.innerText = "", 400);
+        display.style.color = color;
+        // 이전 타이머 클리어
+        if(window.judgeTimer) clearTimeout(window.judgeTimer);
+        window.judgeTimer = setTimeout(() => display.innerText = "", 500);
     }
 
     function updateUI() {
         document.getElementById('score').innerText = score;
         document.getElementById('life').innerText = life;
         document.getElementById('noteCount').innerText = notes.length;
+        
+        if (life >= 100) {
+            audio.pause();
+            alert(`정체가 들통났습니다! (최종회수액: $${score})`);
+            toggleMode(); // 에디터로 강제 복귀
+        }
     }
 
     function exportData() {
-        const dataStr = JSON.stringify(notes);
+        const dataToExport = notes.map(n => ({ time: n.time, lane: n.lane, type: n.type }));
+        const dataStr = JSON.stringify(dataToExport);
         navigator.clipboard.writeText(dataStr);
-        alert("콘솔에 데이터를 출력하고 클립보드에 복사했습니다!");
+        alert("데이터를 클립보드에 복사했습니다! (F12 콘솔에도 출력됨)");
         console.log(dataStr);
     }
 
@@ -149,43 +193,151 @@
         if(confirm("모든 노트를 지울까요?")) notes = [];
     }
 
+    // --- 렌더링 엔진 ---
+
+    function drawNote(note, y) {
+        const x = (note.lane - 1) * LANE_WIDTH + 15;
+        const w = LANE_WIDTH - 30;
+        const h = 35;
+
+        // 그림자 효과로 입체감
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(0,0,0,0.4)";
+
+        if (note.type === 'REAL') {
+            // 진짜 노트: 현금다발 모양 (녹색 테두리 + 노란색)
+            ctx.fillStyle = "#FFD700"; // 골드
+            ctx.strokeStyle = "#006400"; // 다크 그린
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, 8); // 지폐 뭉치 본체
+            ctx.fill();
+            ctx.stroke();
+            
+            // 지폐 로고 ($)
+            ctx.fillStyle = "#006400";
+            ctx.font = "bold 20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("$", x + w/2, y + h/1.5);
+            
+            // 동전 느낌의 반짝임 포인트
+            ctx.fillStyle = "white";
+            ctx.beginPath(); ctx.arc(x+10, y+10, 3, 0, Math.PI*2); ctx.fill();
+
+        } else if (note.type === 'FAKE') {
+            // FAKE 노트: 영수증/종이 모양 (회색)
+            ctx.fillStyle = "#A9A9A9";
+            ctx.beginPath();
+            ctx.rect(x + 10, y + 5, w - 20, h - 10);
+            ctx.fill();
+            
+            // X 표시
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x+20, y+10); ctx.lineTo(x+w-20, y+h-10);
+            ctx.moveTo(x+w-20, y+10); ctx.lineTo(x+20, y+h-10);
+            ctx.stroke();
+
+        } else if (note.type === 'BOSS') {
+            // BOSS 노트: 상사의 서류첩 (검은색)
+            ctx.fillStyle = "#1a1a1a";
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(x, y-5, w, h+10, 3);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = "red";
+            ctx.font = "12px sans-serif";
+            ctx.fillText("꼰대", x + w/2, y + h/1.2);
+        }
+        
+        ctx.shadowBlur = 0; // 그림자 초기화
+    }
+
+    function drawCharacter() {
+        const charX = canvas.width / 2;
+        const charY = 820; // 판정선 아래
+        
+        ctx.save();
+        ctx.translate(charX, charY);
+        
+        if (characterState === 'IDLE') {
+            // 대기: 낮의 홍장미 (촌스러운 도트)
+            ctx.fillStyle = "#8b4513"; // 갈색 머리
+            ctx.beginPath(); ctx.arc(0, -20, 15, 0, Math.PI*2); ctx.fill(); // 머리
+            ctx.fillStyle = "#fff"; // 셔츠
+            ctx.fillRect(-10, -5, 20, 30);
+            // 안경 표현
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+            ctx.strokeRect(-8, -20, 6, 6); ctx.strokeRect(2, -20, 6, 6);
+
+        } else if (characterState === 'HIT') {
+            // 성공: 밤의 미쓰홍 (세련된 요원)
+            // 순간적인 요원 실루엣 연출 (검은색 suit + 역동적 포즈)
+            ctx.fillStyle = "#000";
+            ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(15, 10); ctx.lineTo(-15, 10); ctx.close(); ctx.fill();
+            // 반짝이는 이펙트
+            ctx.fillStyle = "gold";
+            for(let i=0; i<8; i++) {
+                ctx.beginPath(); ctx.arc(Math.random()*40-20, Math.random()*40-30, 2, 0, Math.PI*2); ctx.fill();
+            }
+
+        } else if (characterState === 'MISS') {
+            // 실수: 좌절 (서류에 파묻힘)
+            ctx.fillStyle = "gray";
+            ctx.fillRect(-20, -10, 40, 40); // 서류 더미
+            ctx.fillStyle = "white"; ctx.font = "bold 20px Arial"; ctx.fillText("OTL", 0, 15);
+        }
+        
+        ctx.restore();
+    }
+
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const currentTime = audio.currentTime * 1000;
         document.getElementById('timeDisplay').innerText = audio.currentTime.toFixed(2);
 
-        // 가이드 라인
-        ctx.strokeStyle = "#333";
-        for(let i=1; i<3; i++) {
-            ctx.beginPath(); ctx.moveTo(i*150, 0); ctx.lineTo(i*150, 850); ctx.stroke();
+        // 가이드 라인 그리기 (5레인)
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.lineWidth = 1;
+        for(let i=1; i<LANE_COUNT; i++) {
+            ctx.beginPath(); ctx.moveTo(i*LANE_WIDTH, 0); ctx.lineTo(i*LANE_WIDTH, 900); ctx.stroke();
         }
 
         // 판정선
         ctx.fillStyle = currentMode === 'EDIT' ? "#ffeb3b" : "#4caf50";
-        ctx.fillRect(0, 750, 450, 8);
+        ctx.fillRect(0, 750, 500, 10);
 
         // 노트 렌더링
         notes.forEach(note => {
             if (note.hit) return;
-            const dropSpeed = 0.6; 
+            const dropSpeed = 0.65; 
             const y = 750 - (note.time - currentTime) * dropSpeed;
 
-            if (y > -50 && y < 850) {
-                ctx.fillStyle = note.type === 'REAL' ? "#FFD700" : "#FF4500";
-                ctx.shadowBlur = 10; ctx.shadowColor = "rgba(0,0,0,0.5)";
-                ctx.beginPath();
-                ctx.roundRect((note.lane - 1) * 150 + 20, y, 110, 35, 8);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+            if (y > -100 && y < 900) {
+                drawNote(note, y);
             }
 
-            // 플레이 모드에서 놓친 노트
-            if (currentMode === 'PLAY' && y > 780 && !note.hit) {
+            // 플레이 모드에서 놓친 노트 (Miss)
+            if (currentMode === 'PLAY' && y > 790 && !note.hit) {
                 note.hit = true;
-                life -= 5;
+                if(note.type === 'REAL') {
+                    life += 5; // 비자금을 놓치면 의심도가 소폭 상승
+                    showJudge("MISS", "gray");
+                    characterState = 'MISS';
+                    setTimeout(() => characterState = 'IDLE', 300);
+                }
                 updateUI();
             }
         });
+        
+        // 주인공 캐릭터 그리기
+        if (currentMode === 'PLAY') {
+            drawCharacter();
+        }
 
         requestAnimationFrame(draw);
     }
