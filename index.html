@@ -172,9 +172,37 @@
     let comboEffect = { lane: 0, timer: 0 };
     let showGuide = true; // 가이드 상태 저장 변수
 
-    // 현재 채보 데이터 (에디터 모드 가이드용)
-    const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"},{"time":18368,"lane":3,"type":"REAL"},{"time":19102,"lane":2,"type":"REAL"},{"time":20005,"lane":2,"type":"REAL"},{"time":20956,"lane":2,"type":"REAL"},{"time":21869,"lane":1,"type":"REAL"},{"time":22606,"lane":3,"type":"REAL"},{"time":23948,"lane":1,"type":"REAL"},{"time":24970,"lane":2,"type":"REAL"},{"time":26147,"lane":3,"type":"REAL"},{"time":27642,"lane":1,"type":"REAL"},{"time":28654,"lane":2,"type":"REAL"},{"time":29513,"lane":3,"type":"REAL"},{"time":30880,"lane":2,"type":"REAL"},{"time":32195,"lane":3,"type":"REAL"},{"time":33701,"lane":1,"type":"REAL"},{"time":34772,"lane":3,"type":"REAL"},{"time":35731,"lane":2,"type":"REAL"},{"time":36732,"lane":1,"type":"REAL"},{"time":38231,"lane":3,"type":"REAL"},{"time":39789,"lane":3,"type":"REAL"},{"time":40735,"lane":2,"type":"REAL"},{"time":42165,"lane":1,"type":"REAL"},{"time":43166,"lane":2,"type":"REAL"},{"time":44617,"lane":1,"type":"REAL"},{"time":45780,"lane":3,"type":"REAL"},{"time":46812,"lane":1,"type":"REAL"},{"time":47802,"lane":2,"type":"REAL"},{"time":48830,"lane":3,"type":"REAL"}];
+    let rawData = []; // 처음엔 비어있음
 
+// 게임 초기화 함수 수정
+async function initGame(editor) {
+    try {
+        // 1. 외부 JSON 파일 읽어오기 (GitHub Pages 주소나 상대 경로)
+        const response = await fetch('notes.json'); 
+        rawData = await response.json();
+        
+        // 2. 데이터 로딩이 완료되면 기존 로직 실행
+        isEditorMode = editor;
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('game-view').style.display = 'flex';
+        
+        if(isEditorMode) {
+            document.getElementById('label-score').innerText = "EDITOR";
+            document.getElementById('score').innerText = "GUIDE ON";
+            document.getElementById('label-life').innerText = "STATUS";
+        } else {
+            document.getElementById('label-score').innerText = "CASH";
+            document.getElementById('label-life').innerText = "SUSPICION";
+        }
+
+        resize();
+        startGame();
+    } catch (error) {
+        console.error("노트 데이터를 불러오는데 실패했습니다:", error);
+        alert("데이터 로딩 실패!");
+    }
+}
     function initGame(editor) {
         isEditorMode = editor;
         document.getElementById('intro-screen').style.display = 'none';
