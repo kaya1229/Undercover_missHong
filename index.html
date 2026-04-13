@@ -120,6 +120,20 @@
     <button class="primary-btn" onclick="initGame(false)">INSERT COIN</button>
     <button class="primary-btn editor-btn" onclick="initGame(true)">EDITOR MODE</button>
 </div>
+    <div id="mission-screen" class="overlay-screen" style="display: none;">
+    <div class="pixel-box" style="max-width: 80%; line-height: 1.6;">
+        <h2 style="color:var(--retro-red); margin-top:0;">MISSION</h2>
+        <p style="font-size: 10px;">떨어지는 비자금을 음악에 맞춰 눌러 회수하세요!</p>
+        <div style="margin: 15px 0;">
+            <img src="1775986746405.png" style="width: 50px; display: block; margin: 0 auto 5px;">
+            <p style="font-size: 10px; color:var(--retro-red);">단, 회장님의 함정은 피하세요!</p>
+        </div>
+        <p style="font-size: 10px;">의심도가 100%가 되지 않고<br>비자금을 회수하면 미션 성공!</p>
+    </div>
+    <button class="primary-btn" onclick="startCountdown()">START</button>
+</div>
+
+<div id="countdown-display" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; color: var(--retro-gold); z-index: 150; text-shadow: 4px 4px #000;"></div>
 
 <div id="result-screen" class="overlay-screen">
     <div class="pixel-box">
@@ -176,37 +190,58 @@
     let noteSpeed = 0.6; // 기본값 0.6 (0.8은 빠름, 1.0은 매우 빠름)
     let rawData = []; 
 
-    // --- [수정 포인트 2: initGame 함수 통합 및 404 방지] ---
-    async function initGame(editor) {
-        try {
-            // 404 에러 방지: 파일 이름이 대소문자까지 정확히 notes.json 인지 확인하세요.
-            // 로컬 테스트 시 보안 정책(CORS) 에러가 날 수 있으니 깃허브에 올려서 확인해야 합니다.
-            const response = await fetch('notes.json'); 
-            if (!response.ok) throw new Error("파일을 찾을 수 없습니다.");
-            
-            rawData = await response.json();
-            
-            isEditorMode = editor;
-            document.getElementById('intro-screen').style.display = 'none';
-            document.getElementById('result-screen').style.display = 'none';
+// initGame 함수 수정 (바로 startGame을 부르지 않고 미션 화면을 띄움)
+async function initGame(editor) {
+    try {
+        const response = await fetch('notes.json'); 
+        if (!response.ok) throw new Error("File not found");
+        rawData = await response.json();
+        
+        isEditorMode = editor;
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
+        
+        if(isEditorMode) {
+            // 에디터 모드는 안내 없이 바로 시작
             document.getElementById('game-view').style.display = 'flex';
-            
-            if(isEditorMode) {
-                document.getElementById('label-score').innerText = "EDITOR";
-                document.getElementById('score').innerText = "GUIDE ON";
-                document.getElementById('label-life').innerText = "STATUS";
-            } else {
-                document.getElementById('label-score').innerText = "CASH";
-                document.getElementById('label-life').innerText = "SUSPICION";
-            }
-
+            document.getElementById('label-score').innerText = "EDITOR";
+            document.getElementById('score').innerText = "GUIDE ON";
             resize();
             startGame();
-        } catch (error) {
-            console.error("로딩 에러:", error);
-            alert("노트 데이터(notes.json)를 불러오지 못했습니다. 파일이 깃허브에 잘 올라갔는지 확인해 주세요!");
+        } else {
+            // 플레이 모드는 미션 화면 표시
+            document.getElementById('mission-screen').style.display = 'flex';
         }
+    } catch (error) {
+        console.error("Error loading notes:", error);
+        alert("notes.json 파일을 찾을 수 없습니다!");
     }
+}
+
+// 3초 카운트다운 함수 추가
+function startCountdown() {
+    document.getElementById('mission-screen').style.display = 'none';
+    document.getElementById('game-view').style.display = 'flex';
+    resize();
+
+    const countEl = document.getElementById('countdown-display');
+    countEl.style.display = 'block';
+    let count = 3;
+    countEl.innerText = count;
+
+    const timer = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countEl.innerText = count;
+        } else if (count === 0) {
+            countEl.innerText = "START!";
+        } else {
+            clearInterval(timer);
+            countEl.style.display = 'none';
+            startGame(); // 드디어 게임 시작!
+        }
+    }, 1000);
+}
 
     function toggleGuide() {
         if (!isEditorMode) return;
