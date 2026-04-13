@@ -223,36 +223,54 @@
 
 
     function handlePress(lane) {
-        if(!isPlaying) return;
-        const now = Math.floor(audio.currentTime * 1000);
+    if(!isPlaying) return;
 
-        if(isEditorMode) {
-            const noteData = { time: now, lane: lane, type: "REAL" };
-            editedNotes.push(noteData);
-            console.log(JSON.stringify(noteData) + ",");
-            comboEffect = { lane: lane, timer: 12 };
-            setJudge("REC", "#9b59b6");
-            return;
-        }
-
-        const note = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - now) < 200);
-        if(note) {
-            note.hit = true;
-            const diff = Math.abs(note.time - now);
-            comboEffect = { lane: lane, timer: 15 };
-            if(note.type === 'REAL') {
-                state = 'HIT';
-                if(diff < 60) { score += 15000; shake = 15; setJudge("PERFECT!", "#ffd700"); }
-                else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
-                else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
-            } else {
-                life += 30; shake = 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
-            }
-            updateUI();
-            setTimeout(() => state = 'IDLE', 450);
+    // 1. 버튼 눌림 시각 효과 부여 (에디터/플레이 모드 공통)
+    const btn = document.querySelectorAll('.retro-btn')[lane - 1];
+    if(btn) {
+        btn.classList.add('active');
+        // 모바일 터치 대응: 0.1초 뒤에 자동으로 클래스 제거
+        // (키보드는 keyup 이벤트에서 별도로 제거하므로 중복 방지 로직이 포함됨)
+        if ('ontouchstart' in window) {
+            setTimeout(() => btn.classList.remove('active'), 100);
         }
     }
 
+    const now = Math.floor(audio.currentTime * 1000);
+
+    // 2. 에디터 모드일 때 로직
+    if(isEditorMode) {
+        const noteData = { time: now, lane: lane, type: "REAL", isNew: true };
+        editedNotes.push(noteData);
+        
+        // 내가 찍는 노트를 화면에 즉시 보여주기 위해 notes 배열에도 추가
+        notes.push(noteData); 
+        
+        console.log(JSON.stringify({time: now, lane: lane, type: "REAL"}) + ",");
+        comboEffect = { lane: lane, timer: 12 };
+        setJudge("REC", "#9b59b6");
+        return;
+    }
+
+    // 3. 플레이 모드일 때 판정 로직 (기존 유지)
+    const note = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.time - now) < 200);
+    if(note) {
+        note.hit = true;
+        const diff = Math.abs(note.time - now);
+        comboEffect = { lane: lane, timer: 15 };
+        
+        if(note.type === 'REAL') {
+            state = 'HIT';
+            if(diff < 60) { score += 15000; shake = 15; setJudge("PERFECT!", "#ffd700"); }
+            else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
+            else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
+        } else {
+            life += 30; shake = 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
+        }
+        updateUI();
+        setTimeout(() => state = 'IDLE', 450);
+    }
+}
     function setJudge(txt, col) {
         const tag = document.getElementById('judge-tag');
         tag.innerText = txt; tag.style.color = col;
@@ -305,17 +323,31 @@
     }
 
     function drawNote(ctx, n, y) {
-        const laneW = canvas.width / 3;
-        const x = (n.lane - 1) * laneW + 15;
-        const w = laneW - 30;
-        const h = 55;
-        const targetImg = (n.type === 'REAL') ? imgRealBill : imgFakeBill;
-        
-        ctx.save();
-        if(isEditorMode) ctx.globalAlpha = 0.5; // 에디터 모드 가이드 투명도
-        if (targetImg.complete) ctx.drawImage(targetImg, x, y, w, h);
-        ctx.restore();
+    // [핵심] 에디터 모드에서 가이드가 꺼져(showGuide=false) 있고, 
+    // 기존 가이드 노트(isNew가 없는 것)라면 화면에 그리지 않고 무시합니다.
+    if (isEditorMode && !showGuide && !n.isNew) return;
+
+    const laneW = canvas.width / 3;
+    const x = (n.lane - 1) * laneW + 15;
+    const w = laneW - 30;
+    const h = 55;
+    const targetImg = (n.type === 'REAL') ? imgRealBill : imgFakeBill;
+    
+    ctx.save();
+    
+    if(isEditorMode) {
+        if(!n.isNew) {
+            // 기존 가이드 노트는 아주 흐릿하게 (0.3)
+            ctx.globalAlpha = 0.3; 
+        } else {
+            // 내가 실시간으로 찍고 있는 노트는 선명하게 (1.0)
+            ctx.globalAlpha = 1.0; 
+        }
     }
+    
+    if (targetImg.complete) ctx.drawImage(targetImg, x, y, w, h);
+    ctx.restore();
+}
 
     function gameLoop() {
         if(!isPlaying) return;
