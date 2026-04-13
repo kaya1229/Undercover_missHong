@@ -159,7 +159,7 @@
     <div class="pixel-box">
         <p id="result-title" style="color:var(--retro-red); margin-bottom: 20px;">BUSTED!</p>
         <p id="result-desc" style="font-size: 10px; margin-bottom: 10px;">TOTAL COLLECTED:</p>
-        <p id="final-score" style="color:var(--retro-gold); font-size: 18px;">₩ 0</p>
+        <p id="final-score" style="color:var(--retro-gold); font-size: 18px;">₩  0</p>
     </div>
     <button class="primary-btn" onclick="resetToHome()">GO HOME</button>
 </div>
@@ -168,7 +168,7 @@
     <div id="scoreboard">
         <div class="stat-line">
             <span id="label-score">CASH</span>
-            <span id="score" style="color:var(--retro-gold)">₩ 0</span>
+            <span id="score" style="color:var(--retro-gold)">₩  0</span>
         </div>
         <div class="stat-line">
             <span id="label-life">SUSPICION</span>
@@ -340,7 +340,7 @@ function startCountdown() {
 
     function updateUI() {
         if(!isEditorMode) {
-            document.getElementById('score').innerText = '₩' + score.toLocaleString();
+            document.getElementById('score').innerText = '₩ ' + score.toLocaleString();
             document.getElementById('sus-fill').style.width = life + '%';
             if(life >= 100 && isPlaying) endGame();
         }
@@ -364,13 +364,13 @@ function startCountdown() {
             if (life < 100) {
                 resTitle.innerText = "MISSION COMPLETE!";
                 resTitle.style.color = "var(--retro-gold)"; // 성공은 황금색
-                resDesc.innerText = "SAFE & RICH!";
+                resDesc.innerText = "COLLECTED";
             } else {
                 resTitle.innerText = "BUSTED!";
                 resTitle.style.color = "var(--retro-red)"; // 실패는 빨간색
                 resDesc.innerText = "TOTAL COLLECTED:";
             }
-            resScore.innerText = '₩' + score.toLocaleString();
+            resScore.innerText = '₩ ' + score.toLocaleString();
         }
         document.getElementById('result-screen').style.display = 'flex';
     }
