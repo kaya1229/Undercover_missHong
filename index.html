@@ -6,6 +6,8 @@
     <title>언더커버 미쓰홍 1980 - 픽셀 에디션</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff');
+
         
         :root {
             --pixel-bg: #22252c;
@@ -71,25 +73,32 @@
 
         #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
 
-        #countdown-display {
+        #mission-screen h2, #mission-screen p {
+    /* 순서가 중요합니다! 
+       1. 'Press Start 2P'는 한글이 없어서 영문에만 적용됨
+       2. 한글을 만나면 다음 폰트인 'DungGeunMo'로 넘어가서 적용됨 
+    */
+    font-family: 'Press Start 2P', 'DungGeunMo', cursive;
+}
+/* 2. 카운트다운 스타일 수정 */
+#countdown-display {
     display: none;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     
-    /* 핵심: 화면 너비에 맞게 글자 크기 자동 조절 */
+    /* 핵심: 숫자는 크게, 문자는 화면 폭에 맞춰 자동 조절 */
     font-size: 20vw; 
     font-family: 'DungGeunMo', 'Press Start 2P', cursive;
     
     color: var(--retro-gold);
     z-index: 150;
     text-shadow: 4px 4px #000;
-    white-space: nowrap; /* 한 줄로 나오게 강제 */
+    white-space: nowrap; 
     text-align: center;
-    pointer-events: none; /* 카운트다운 중 클릭 방해 금지 */
+    pointer-events: none;
 }
-
         #scoreboard {
             height: 85px; background: var(--pixel-bg);
             border-bottom: 6px solid var(--pixel-white);
@@ -246,6 +255,9 @@ function startCountdown() {
     const countEl = document.getElementById('countdown-display');
     countEl.style.display = 'block';
     let count = 3;
+    
+    // 처음 숫자 크기 설정
+    countEl.style.fontSize = "25vw"; 
     countEl.innerText = count;
 
     const timer = setInterval(() => {
@@ -253,11 +265,13 @@ function startCountdown() {
         if (count > 0) {
             countEl.innerText = count;
         } else if (count === 0) {
+            // [중요] START! 로 바뀔 때 폰트 크기를 줄임 (잘림 방지)
+            countEl.style.fontSize = "15vw"; 
             countEl.innerText = "START!";
         } else {
             clearInterval(timer);
             countEl.style.display = 'none';
-            startGame(); // 드디어 게임 시작!
+            startGame(); 
         }
     }, 1000);
 }
