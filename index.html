@@ -8,7 +8,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff');
 
-        
         :root {
             --pixel-bg: #22252c;
             --pixel-white: #e0f8cf;
@@ -74,31 +73,25 @@
         #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
 
         #mission-screen h2, #mission-screen p {
-    /* 순서가 중요합니다! 
-       1. 'Press Start 2P'는 한글이 없어서 영문에만 적용됨
-       2. 한글을 만나면 다음 폰트인 'DungGeunMo'로 넘어가서 적용됨 
-    */
-    font-family: 'Press Start 2P', 'DungGeunMo', cursive;
-}
-/* 2. 카운트다운 스타일 수정 */
-#countdown-display {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    /* 핵심: 숫자는 크게, 문자는 화면 폭에 맞춰 자동 조절 */
-    font-size: 20vw; 
-    font-family: 'DungGeunMo', 'Press Start 2P', cursive;
-    
-    color: var(--retro-gold);
-    z-index: 150;
-    text-shadow: 4px 4px #000;
-    white-space: nowrap; 
-    text-align: center;
-    pointer-events: none;
-}
+            font-family: 'Press Start 2P', 'DungGeunMo', cursive;
+        }
+
+        #countdown-display {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20vw; 
+            font-family: 'DungGeunMo', 'Press Start 2P', cursive;
+            color: var(--retro-gold);
+            z-index: 150;
+            text-shadow: 4px 4px #000;
+            white-space: nowrap; 
+            text-align: center;
+            pointer-events: none;
+        }
+
         #scoreboard {
             height: 85px; background: var(--pixel-bg);
             border-bottom: 6px solid var(--pixel-white);
@@ -125,14 +118,14 @@
             display: flex; justify-content: center; align-items: center;
             color: #fff; font-size: 24px; text-shadow: 2px 2px #000;
         }
-        /* 키보드 입력 시 버튼이 눌린 것처럼 보이는 효과 */
-.retro-btn.active {
-    transform: translate(4px, 4px);
-    border-bottom-width: 4px;
-    border-right-width: 4px;
-    background: #777;
-    box-shadow: none;
-}
+
+        .retro-btn.active {
+            transform: translate(4px, 4px);
+            border-bottom-width: 4px;
+            border-right-width: 4px;
+            background: #777;
+            box-shadow: none;
+        }
 
         #judge-tag {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
@@ -148,7 +141,8 @@
     <button class="primary-btn" onclick="initGame(false)">INSERT COIN</button>
     <button class="primary-btn editor-btn" onclick="initGame(true)">EDITOR MODE</button>
 </div>
-    <div id="mission-screen" class="overlay-screen" style="display: none;">
+
+<div id="mission-screen" class="overlay-screen" style="display: none;">
     <div class="pixel-box" style="max-width: 80%; line-height: 1.6;">
         <h2 style="color:var(--retro-red); margin-top:0;">MISSION</h2>
         <p style="font-size: 10px;">떨어지는 비자금을 음악에 맞춰 눌러 회수하세요!</p>
@@ -214,11 +208,9 @@
     let comboEffect = { lane: 0, timer: 0 };
     let showGuide = true; 
 
-    // --- [수정 포인트 1: 속도 조절 변수] ---
-    let noteSpeed = 0.5; // 기본값 0.5 (0.8은 빠름, 1.0은 매우 빠름)
+    let noteSpeed = 0.5; 
     let rawData = []; 
 
-// initGame 함수 수정 (바로 startGame을 부르지 않고 미션 화면을 띄움)
 async function initGame(editor) {
     try {
         const response = await fetch('notes.json'); 
@@ -230,14 +222,12 @@ async function initGame(editor) {
         document.getElementById('result-screen').style.display = 'none';
         
         if(isEditorMode) {
-            // 에디터 모드는 안내 없이 바로 시작
             document.getElementById('game-view').style.display = 'flex';
             document.getElementById('label-score').innerText = "EDITOR";
             document.getElementById('score').innerText = "GUIDE ON";
             resize();
             startGame();
         } else {
-            // 플레이 모드는 미션 화면 표시
             document.getElementById('mission-screen').style.display = 'flex';
         }
     } catch (error) {
@@ -246,7 +236,6 @@ async function initGame(editor) {
     }
 }
 
-// 3초 카운트다운 함수 추가
 function startCountdown() {
     document.getElementById('mission-screen').style.display = 'none';
     document.getElementById('game-view').style.display = 'flex';
@@ -256,7 +245,6 @@ function startCountdown() {
     countEl.style.display = 'block';
     let count = 3;
     
-    // 처음 숫자 크기 설정
     countEl.style.fontSize = "25vw"; 
     countEl.innerText = count;
 
@@ -265,7 +253,6 @@ function startCountdown() {
         if (count > 0) {
             countEl.innerText = count;
         } else if (count === 0) {
-            // [중요] START! 로 바뀔 때 폰트 크기를 줄임 (잘림 방지)
             countEl.style.fontSize = "15vw"; 
             countEl.innerText = "START!";
         } else {
@@ -381,38 +368,43 @@ function startCountdown() {
         document.getElementById('result-screen').style.display = 'flex';
     }
 
-    let collectedBills = [];
-
-    // [수정] 캐릭터 그리기 함수: 비율 유지 버전
+    // [수정 사항 반영] 캐릭터 그리기 함수
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
-        const cy = canvas.height * 0.82;
-        const bounce = Math.sin(frame * 0.3) * 6;
-        const jump = (state === 'HIT') ? -45 : 0;
+        // 캐릭터 발바닥 기준선을 내려 문구(Judge Tag) 아래로 위치시킴
+        const cy = canvas.height * 0.88; 
+        const bounce = Math.sin(frame * 0.3) * 4; // 바운스 소폭 축소
+        const jump = (state === 'HIT') ? -35 : 0; // 점프 소폭 축소
         
-        const charW = 100; // 너비 고정
+        // 기본 너비 축소 (80)
+        let charW = 80; 
         let currentImg = (state === 'HIT') ? imgMiss : imgRose;
 
         ctx.save();
         ctx.translate(cx, cy + bounce + jump);
 
         if (currentImg.complete && currentImg.naturalWidth !== 0) {
-            // 원본 비율 계산 (높이 / 너비)
             const aspectRatio = currentImg.naturalHeight / currentImg.naturalWidth;
-            const charH = charW * aspectRatio; // 너비에 따른 높이 자동 계산
+            
+            // geumbo.png(imgMiss)인 경우 크기를 추가로 크게 로딩 (약 1.3배)
+            if (state === 'HIT') {
+                charW = 105; 
+            }
+
+            const charH = charW * aspectRatio;
 
             if (state === 'PANIC') ctx.filter = 'contrast(2) sepia(1) hue-rotate(-50deg)';
             
-            // 발바닥 위치를 맞추기 위해 -charH만큼 올려서 그림
-            ctx.drawImage(currentImg, -charW / 2, -charH + 20, charW, charH);
+            // 이미지 그리기 (발바닥이 기준선에 닿도록 -charH 처리)
+            ctx.drawImage(currentImg, -charW / 2, -charH, charW, charH);
             ctx.filter = 'none';
         } else {
-            // 이미지 로딩 전 임시 박스
             ctx.fillStyle = (state === 'HIT') ? "pink" : "red";
             ctx.fillRect(-charW / 2, -100, charW, 120);
         }
         ctx.restore();
     }
+
     function drawNote(ctx, n, y) {
         if (isEditorMode && !showGuide && !n.isNew) return;
         const laneW = canvas.width / 3;
@@ -459,7 +451,6 @@ function startCountdown() {
 
         notes.forEach(n => {
             if(n.hit) return;
-            // --- [수정 포인트 3: 속도 변수 적용] ---
             let ny = judgeLineY - (n.time - now) * noteSpeed; 
             if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
             
