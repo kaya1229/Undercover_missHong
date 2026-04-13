@@ -170,6 +170,7 @@
     let state = 'IDLE'; 
     let shake = 0, frame = 0;
     let comboEffect = { lane: 0, timer: 0 };
+    let showGuide = true; // 가이드 상태 저장 변수
 
     // 현재 채보 데이터 (에디터 모드 가이드용)
     const rawData = [{"time":6900,"lane":1,"type":"REAL"},{"time":8612,"lane":2,"type":"REAL"},{"time":10532,"lane":1,"type":"REAL"},{"time":11448,"lane":2,"type":"REAL"},{"time":12502,"lane":1,"type":"REAL"},{"time":13782,"lane":2,"type":"REAL"},{"time":14547,"lane":3,"type":"REAL"},{"time":15541,"lane":1,"type":"REAL"},{"time":16318,"lane":3,"type":"REAL"},{"time":17785,"lane":1,"type":"REAL"},{"time":18368,"lane":3,"type":"REAL"},{"time":19102,"lane":2,"type":"REAL"},{"time":20005,"lane":2,"type":"REAL"},{"time":20956,"lane":2,"type":"REAL"},{"time":21869,"lane":1,"type":"REAL"},{"time":22606,"lane":3,"type":"REAL"},{"time":23948,"lane":1,"type":"REAL"},{"time":24970,"lane":2,"type":"REAL"},{"time":26147,"lane":3,"type":"REAL"},{"time":27642,"lane":1,"type":"REAL"},{"time":28654,"lane":2,"type":"REAL"},{"time":29513,"lane":3,"type":"REAL"},{"time":30880,"lane":2,"type":"REAL"},{"time":32195,"lane":3,"type":"REAL"},{"time":33701,"lane":1,"type":"REAL"},{"time":34772,"lane":3,"type":"REAL"},{"time":35731,"lane":2,"type":"REAL"},{"time":36732,"lane":1,"type":"REAL"},{"time":38231,"lane":3,"type":"REAL"},{"time":39789,"lane":3,"type":"REAL"},{"time":40735,"lane":2,"type":"REAL"},{"time":42165,"lane":1,"type":"REAL"},{"time":43166,"lane":2,"type":"REAL"},{"time":44617,"lane":1,"type":"REAL"},{"time":45780,"lane":3,"type":"REAL"},{"time":46812,"lane":1,"type":"REAL"},{"time":47802,"lane":2,"type":"REAL"},{"time":48830,"lane":3,"type":"REAL"}];
@@ -192,6 +193,12 @@
         resize();
         startGame();
     }
+    
+    function toggleGuide() {
+    if (!isEditorMode) return; // 플레이 모드에서는 작동 안 함
+    showGuide = !showGuide;
+    document.getElementById('score').innerText = showGuide ? "GUIDE ON" : "GUIDE OFF";
+}
 
     function resetToHome() {
         location.reload();
@@ -394,7 +401,16 @@
         ctx.restore();
         requestAnimationFrame(gameLoop);
     }
+    // 키보드 G키로 가이드 토글
+window.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'g') toggleGuide();
+});
 
+// 상단 스코어보드 클릭/터치 시 가이드 토글
+document.getElementById('scoreboard').addEventListener('mousedown', (e) => {
+    toggleGuide();
+});
+    
     window.addEventListener('resize', resize);
     // 키보드 1, 2, 3 입력 이벤트
 window.addEventListener('keydown', (e) => {
