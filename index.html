@@ -381,24 +381,38 @@ function startCountdown() {
         document.getElementById('result-screen').style.display = 'flex';
     }
 
+    let collectedBills = [];
+
+    // [수정] 캐릭터 그리기 함수: 비율 유지 버전
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
         const cy = canvas.height * 0.82;
         const bounce = Math.sin(frame * 0.3) * 6;
         const jump = (state === 'HIT') ? -45 : 0;
-        const charW = 100; const charH = 120;
+        
+        const charW = 100; // 너비 고정
+        let currentImg = (state === 'HIT') ? imgMiss : imgRose;
+
         ctx.save();
         ctx.translate(cx, cy + bounce + jump);
-        if (state === 'HIT') {
-            if (imgMiss.complete) ctx.drawImage(imgMiss, -charW/2, -charH + 20, charW, charH);
-        } else {
+
+        if (currentImg.complete && currentImg.naturalWidth !== 0) {
+            // 원본 비율 계산 (높이 / 너비)
+            const aspectRatio = currentImg.naturalHeight / currentImg.naturalWidth;
+            const charH = charW * aspectRatio; // 너비에 따른 높이 자동 계산
+
             if (state === 'PANIC') ctx.filter = 'contrast(2) sepia(1) hue-rotate(-50deg)';
-            if (imgRose.complete) ctx.drawImage(imgRose, -charW/2, -charH + 20, charW, charH);
+            
+            // 발바닥 위치를 맞추기 위해 -charH만큼 올려서 그림
+            ctx.drawImage(currentImg, -charW / 2, -charH + 20, charW, charH);
             ctx.filter = 'none';
+        } else {
+            // 이미지 로딩 전 임시 박스
+            ctx.fillStyle = (state === 'HIT') ? "pink" : "red";
+            ctx.fillRect(-charW / 2, -100, charW, 120);
         }
         ctx.restore();
     }
-
     function drawNote(ctx, n, y) {
         if (isEditorMode && !showGuide && !n.isNew) return;
         const laneW = canvas.width / 3;
