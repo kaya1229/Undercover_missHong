@@ -71,6 +71,25 @@
 
         #game-view { display: none; width: 100%; height: 100%; flex-direction: column; }
 
+        #countdown-display {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* 핵심: 화면 너비에 맞게 글자 크기 자동 조절 */
+    font-size: 20vw; 
+    font-family: 'DungGeunMo', 'Press Start 2P', cursive;
+    
+    color: var(--retro-gold);
+    z-index: 150;
+    text-shadow: 4px 4px #000;
+    white-space: nowrap; /* 한 줄로 나오게 강제 */
+    text-align: center;
+    pointer-events: none; /* 카운트다운 중 클릭 방해 금지 */
+}
+
         #scoreboard {
             height: 85px; background: var(--pixel-bg);
             border-bottom: 6px solid var(--pixel-white);
@@ -133,7 +152,7 @@
     <button class="primary-btn" onclick="startCountdown()">START</button>
 </div>
 
-<div id="countdown-display" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; color: var(--retro-gold); z-index: 150; text-shadow: 4px 4px #000;"></div>
+<div id="countdown-display"></div>
 
 <div id="result-screen" class="overlay-screen">
     <div class="pixel-box">
