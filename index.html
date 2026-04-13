@@ -205,7 +205,6 @@
     let shake = 0, frame = 0;
     let comboEffect = { lane: 0, timer: 0 };
     let showGuide = true; 
-    let collectedBills = []; // 돈다발 쌓기용 배열
 
     let noteSpeed = 0.5; 
     let rawData = []; 
@@ -277,7 +276,7 @@ function startCountdown() {
 
     function startGame() {
         isPlaying = true;
-        score = 0; life = 0; editedNotes = []; collectedBills = [];
+        score = 0; life = 0; editedNotes = [];
         
         notes = rawData.map(n => {
             let finalType = n.type;
@@ -322,14 +321,6 @@ function startCountdown() {
             
             if(note.type === 'REAL') {
                 state = 'HIT';
-                // [로직 추가] 돈다발 데이터 생성 및 추가
-                const billX = (lane - 1) * (canvas.width / 3) + (canvas.width / 6) + (Math.random() * 40 - 20);
-                collectedBills.push({
-                    x: billX,
-                    y: canvas.height * 0.88 + (Math.random() * 20 - 10),
-                    rot: (Math.random() - 0.5) * 0.5
-                });
-
                 if(diff < 60) { score += 15000; shake = 15; setJudge("PERFECT!", "#ffd700"); }
                 else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
                 else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
@@ -359,38 +350,38 @@ function startCountdown() {
         isPlaying = false;
         audio.pause();
         
+        const resTitle = document.getElementById('result-title');
+        const resDesc = document.getElementById('result-desc');
+        const resScore = document.getElementById('final-score');
+
         if(isEditorMode) {
-            document.getElementById('result-title').innerText = "DONE!";
-            document.getElementById('result-title').style.color = "var(--retro-purple)";
-            document.getElementById('result-desc').innerText = "CHECK CONSOLE (F12)";
-            document.getElementById('final-score').innerText = editedNotes.length + " NEW NOTES";
+            resTitle.innerText = "DONE!";
+            resTitle.style.color = "var(--retro-purple)";
+            resDesc.innerText = "CHECK CONSOLE (F12)";
+            resScore.innerText = editedNotes.length + " NEW NOTES";
         } else {
-            document.getElementById('result-title').innerText = "BUSTED!";
-            document.getElementById('result-desc').innerText = "TOTAL COLLECTED:";
-            document.getElementById('final-score').innerText = '₩' + score.toLocaleString();
+            // 의심도(life)가 100 미만이면 성공, 100 이상이면 검거(실패)
+            if (life < 100) {
+                resTitle.innerText = "MISSION COMPLETE!";
+                resTitle.style.color = "var(--retro-gold)"; // 성공은 황금색
+                resDesc.innerText = "SAFE & RICH!";
+            } else {
+                resTitle.innerText = "BUSTED!";
+                resTitle.style.color = "var(--retro-red)"; // 실패는 빨간색
+                resDesc.innerText = "TOTAL COLLECTED:";
+            }
+            resScore.innerText = '₩' + score.toLocaleString();
         }
         document.getElementById('result-screen').style.display = 'flex';
-    }
-
-    // 획득한 돈다발들을 그리는 함수
-    function drawCollectedBills(ctx) {
-        const bW = 50, bH = 28;
-        collectedBills.forEach(b => {
-            ctx.save();
-            ctx.translate(b.x, b.y);
-            ctx.rotate(b.rot);
-            if(imgRealBill.complete) ctx.drawImage(imgRealBill, -bW/2, -bH/2, bW, bH);
-            ctx.restore();
-        });
     }
 
     function drawCharacter(ctx) {
         const cx = canvas.width / 2;
         const cy = canvas.height * 0.90; 
         const bounce = Math.sin(frame * 0.3) * 4;
-        const jump = (state === 'HIT') ? -35 : 0; 
+        const jump = (state === 'HIT') ? -15 : 0; 
         
-        let charW = 60; 
+        let charW = 45; 
         let currentImg = (state === 'HIT') ? imgMiss : imgRose;
 
         ctx.save();
@@ -398,7 +389,7 @@ function startCountdown() {
 
         if (currentImg.complete && currentImg.naturalWidth !== 0) {
             const aspectRatio = currentImg.naturalHeight / currentImg.naturalWidth;
-            if (state === 'HIT') charW = 72; 
+            if (state === 'HIT') charW = 54; 
             const charH = charW * aspectRatio;
             if (state === 'PANIC') ctx.filter = 'contrast(2) sepia(1) hue-rotate(-50deg)';
             ctx.drawImage(currentImg, -charW / 2, -charH, charW, charH);
@@ -462,8 +453,6 @@ function startCountdown() {
             }
         });
 
-        // 돈다발 먼저 그리고 그 위에 캐릭터를 그립니다.
-        drawCollectedBills(ctx);
         drawCharacter(ctx);
         
         ctx.restore();
