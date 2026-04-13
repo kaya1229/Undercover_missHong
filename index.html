@@ -215,7 +215,7 @@
     let showGuide = true; 
 
     // --- [수정 포인트 1: 속도 조절 변수] ---
-    let noteSpeed = 0.6; // 기본값 0.6 (0.8은 빠름, 1.0은 매우 빠름)
+    let noteSpeed = 0.5; // 기본값 0.5 (0.8은 빠름, 1.0은 매우 빠름)
     let rawData = []; 
 
 // initGame 함수 수정 (바로 startGame을 부르지 않고 미션 화면을 띄움)
@@ -341,7 +341,7 @@ function startCountdown() {
                 else if(diff < 120) { score += 10000; shake = 8; setJudge("GREAT!", "#00f2ff"); }
                 else { score += 5000; shake = 4; setJudge("GOOD", "#ffffff"); }
             } else {
-                life += 30; shake = 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
+                life += 15; shake = 30; state = 'PANIC'; setJudge("FAKE!!", "#ff3e3e");
             }
             updateUI();
             setTimeout(() => state = 'IDLE', 450);
