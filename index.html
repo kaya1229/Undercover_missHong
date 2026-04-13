@@ -45,6 +45,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            container-type: inline-size;
         }
 
         #game-container::after {
@@ -95,7 +96,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 20vw; 
+            font-size: 20cqw; 
+            width : 100%;
             font-family: 'DungGeunMo', 'Press Start 2P', cursive;
             color: var(--retro-gold);
             z-index: 150;
@@ -190,7 +192,7 @@
 
     <div id="result-screen" class="overlay-screen">
         <div class="pixel-box">
-            <p id="result-title" style="color:var(--retro-red); margin-bottom: 20px;">BUSTED!</p>
+            <p id="result-title" style="color:var(--retro-red); margin-bottom: 20px;">FAIL!</p>
             <p id="result-desc" style="font-size: 10px; margin-bottom: 10px;">TOTAL COLLECTED:</p>
             <p id="final-score" style="color:var(--retro-gold); font-size: 18px;">₩  0</p>
         </div>
@@ -277,7 +279,7 @@ function startCountdown() {
     countEl.style.display = 'block';
     let count = 3;
     
-    countEl.style.fontSize = "100px"; 
+    countEl.style.fontSize = "25cqw"; 
     countEl.innerText = count;
 
     const timer = setInterval(() => {
@@ -285,6 +287,7 @@ function startCountdown() {
         if (count > 0) {
             countEl.innerText = count;
         } else if (count === 0) {
+            countEl.style.fontSize = "18cqw";
             countEl.innerText = "START!";
         } else {
             clearInterval(timer);
