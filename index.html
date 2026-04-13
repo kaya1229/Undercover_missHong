@@ -415,7 +415,7 @@ async function initGame(editor) {
 
         notes.forEach(n => {
             if(n.hit) return;
-            let ny = judgeLineY - (n.time - now) * 0.75;
+            let ny = judgeLineY - (n.time - now) * 0.6;
             if(ny > -100 && ny < canvas.height) drawNote(ctx, n, ny);
             
             // 게임 모드에서만 놓쳤을 때 MISS 처리
